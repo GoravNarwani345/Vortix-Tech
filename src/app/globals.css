@@ -1,26 +1,291 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ===== VORTIX TECH DESIGN SYSTEM (LIGHT) ===== */
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-glow: var(--accent-glow);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-glow: var(--secondary-glow);
+  --color-card-bg: var(--card-bg);
+  --color-card-bg-solid: var(--card-bg-solid);
+  --color-card-border: var(--card-border);
+  --color-card-border-hover: var(--card-border-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-instrument);
 }
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Core Colors */
+    --background: #FAF7F2; /* Warm cream */
+    --background-secondary: #FFFFFF;
+    --foreground: #1A1A1A; /* Dark charcoal */
+    --foreground-muted: #6B6B6B;
+
+    /* Brand Colors */
+    --accent: #0066FF; /* Sophisticated Blue */
+    --accent-hover: #0052CC;
+    --accent-glow: rgba(0, 102, 255, 0.1);
+    --accent-glow-strong: rgba(0, 102, 255, 0.2);
+    --secondary: #E8450E; /* Warm coral-orange */
+    --secondary-hover: #CC3D0C;
+    --secondary-glow: rgba(232, 69, 14, 0.1);
+
+    /* Surface Colors */
+    --card-bg: #FFFFFF;
+    --card-bg-solid: #FFFFFF;
+    --card-border: rgba(0, 0, 0, 0.08);
+    --card-border-hover: rgba(0, 102, 255, 0.3);
+
+    /* Status Colors */
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
+    --info: #3B82F6;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.06);
+    --shadow-glow: 0 8px 24px rgba(0, 102, 255, 0.15);
+    --shadow-glow-strong: 0 12px 32px rgba(0, 102, 255, 0.25);
+
+    /* Spacing */
+    --nav-height: 80px;
+
+    /* Borders */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--nav-height);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Subtle grain texture */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /* ===== SELECTION ===== */
+  ::selection {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ===== TYPOGRAPHY ===== */
+  h1, h2, h3, h4, .font-serif {
+    font-family: var(--font-instrument), Georgia, serif;
+  }
+  h1, h2, h3, h4 {
+    color: var(--foreground);
+  }
+
+  /* ===== FOCUS STYLES ===== */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ===== LINK STYLES ===== */
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* ===== PREMIUM CARD ===== */
+  .premium-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .premium-card:hover {
+    border-color: var(--card-border-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* ===== SECTION STYLES ===== */
+  .section-padding {
+    padding: 8rem 0;
+  }
+  @media (max-width: 768px) {
+    .section-padding {
+      padding: 5rem 0;
+    }
+  }
+
+  /* ===== RESPONSIVE CONTAINER ===== */
+  .container-custom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .container-custom {
+      padding: 0 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-custom {
+      padding: 0 4rem;
+    }
+  }
+
+  /* ===== BUTTON STYLES ===== */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--foreground);
+    color: #FFFFFF;
+    font-weight: 600;
+    padding: 0.875rem 2rem;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
+    font-family: var(--font-inter);
+  }
+  .btn-primary:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: transparent;
+    color: var(--foreground);
+    border: 1px solid var(--card-border);
+    font-weight: 600;
+    padding: 0.875rem 2rem;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
+    font-family: var(--font-inter);
+  }
+  .btn-secondary:hover {
+    border-color: var(--foreground);
+    background: rgba(0,0,0,0.02);
+  }
+
+  /* ===== ADMIN PANEL STYLES (Preserved as Dark) ===== */
+  .admin-sidebar {
+    background: #0E0E1A;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    width: 260px;
+    min-height: 100vh;
+    color: #E8E8F0;
+  }
+  .admin-content {
+    flex: 1;
+    padding: 2rem;
+    background: #08080F;
+    color: #E8E8F0;
+  }
+  /* ===== DATA TABLE ===== */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8B8BA3;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-weight: 600;
+  }
+  .data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.875rem;
+    color: #E8E8F0;
+  }
+  .data-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  /* ===== RICH CONTENT ===== */
+  .prose-content {
+    color: var(--foreground);
+    line-height: 1.8;
+  }
+  .prose-content h1, .prose-content h2, .prose-content h3, .prose-content h4 {
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+  }
+  .prose-content p {
+    margin-bottom: 1.25em;
+    color: var(--foreground-muted);
+  }
+  .prose-content a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: rgba(0, 102, 255, 0.3);
+    transition: text-decoration-color 0.2s;
+  }
+  .prose-content a:hover {
+    text-decoration-color: var(--accent);
+  }
 }

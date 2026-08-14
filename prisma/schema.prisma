@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    String   @default("New") // New, In Progress, Resolved
+  createdAt DateTime @default(now())
+}
+
+model Article {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  category    String
+  author      String   @default("Vortix Tech AI")
+  image       String   // URL to cover image
+  excerpt     String   @db.Text
+  content     String   @db.Text // Full markdown content
+  readTime    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isPublished Boolean  @default(true)
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // "Web App", "Mobile App", "AI & Automation"
+  images      String[] // Array of image URLs/Base64 strings
+  description String   @db.Text
+  tags        String   // Comma-separated: "Next.js,React,Node.js"
+  liveUrl     String?
+  githubUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isPublished Boolean  @default(true)
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  content   String   @db.Text
+  rating    Int      @default(5)
+  createdAt DateTime @default(now())
+  isPublished Boolean @default(true)
+}
+
