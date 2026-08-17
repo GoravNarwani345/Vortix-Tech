@@ -252,6 +252,48 @@ Each founder should have their own LinkedIn with:
 | 4 | **Hashnode** | hashnode.dev | Technical blogging platform with built-in audience |
 | 5 | **AngelList/Wellfound** | wellfound.com | Startup job board — many hire freelancers |
 
+### Tier 4 — AI & Automation Niche (Your Specialty!)
+
+| # | Platform | URL | Why It's Perfect for Vortix |
+|---|---|---|---|
+| 1 | **n8n Community Forum** | community.n8n.io | People literally posting asking for workflow help — offer paid services |
+| 2 | **Make Partners** | make.com/en/partners | Become an official Make/Integromat partner, receive client referrals |
+| 3 | **Zapier Experts** | zapier.com/experts | Get listed as a Zapier Expert, clients sent directly to you |
+| 4 | **AI/ML Jobs** | ai-jobs.net | AI-specific job board, less competition than general platforms |
+| 5 | **LangChain Discord** | discord.gg/langchain | Growing community of businesses looking for LLM integration devs |
+| 6 | **Replicate Community** | replicate.com | ComfyUI related, offer custom model & workflow building services |
+| 7 | **Hugging Face** | huggingface.co | ML/AI community — establish expertise, find clients needing AI integrations |
+
+### Tier 5 — Premium Vetted Platforms (Higher Pay, Selective Entry)
+
+| # | Platform | URL | Avg Rate | Entry Method |
+|---|---|---|---|---|
+| 1 | **Remotebase** | remotebase.com | $30-60/hr | Pakistan-based! Matches devs with Silicon Valley clients |
+| 2 | **A.Team** | a.team | $100-200+/hr | Invite-only network of top product builders |
+| 3 | **Andela** | andela.com | $50-100/hr | Connects Asian/African talent with US/EU enterprise clients |
+| 4 | **Deel** | deel.com | $40-80/hr | Global hiring platform, handles contracts & payments |
+| 5 | **Crossover** | crossover.com | $30-100/hr | Full-time remote roles, $60k-200k/year |
+| 6 | **Revelo** | revelo.com | $40-70/hr | Expanding globally, vetted talent marketplace |
+| 7 | **Malt** | malt.com | $40-80/hr | Huge in France/Europe, 700k+ freelancers, less saturated |
+| 8 | **Hubstaff Talent** | talent.hubstaff.com | Varies | 100% free platform, zero fees for freelancers |
+| 9 | **Guru** | guru.com | $20-50/hr | Established platform with Workroom for project management |
+| 10 | **Truelancer** | truelancer.com | $15-40/hr | Growing fast in Asia, simple platform |
+| 11 | **SolidGigs** | solidgigs.com | Varies | Curates best freelance jobs from across internet ($21/mo) |
+| 12 | **Kwork** | kwork.com | $10-50/hr | Russian marketplace expanding globally, very low competition |
+
+### Tier 6 — Direct Client Acquisition Tools (No Platform Fees)
+
+| # | Tool | URL | How to Use for Vortix |
+|---|---|---|---|
+| 1 | **Apollo.io** | apollo.io | Free B2B database — find founder/CTO emails, send cold outreach |
+| 2 | **Hunter.io** | hunter.io | Find email addresses from any company domain |
+| 3 | **Lemlist** | lemlist.com | Cold email automation with AI personalization at scale |
+| 4 | **Instantly.ai** | instantly.ai | Send 1000+ cold emails/day with built-in warmup |
+| 5 | **Calendly** | calendly.com | Free booking link — add to all outreach to reduce friction |
+| 6 | **Loom** | loom.com | Record personalized video pitches for high-value prospects |
+| 7 | **Google Maps Outreach** | maps.google.com | Search "[industry] near [city]", find businesses with bad websites |
+| 8 | **LinkedIn Sales Navigator** | linkedin.com/sales | Advanced search filters to find decision-makers ($99/mo) |
+
 ---
 
 ## 5. Discord Servers for Client Hunting

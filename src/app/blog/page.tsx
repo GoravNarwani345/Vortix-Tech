@@ -6,6 +6,15 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Insights on web development, AI, automation, and tech trends from the Vortix Tech team.",
+  keywords: ["tech blog", "web development insights", "AI automation articles", "software engineering blog"],
+  alternates: {
+    canonical: "/blog",
+  },
+  openGraph: {
+    title: "Blog | Vortix Tech",
+    description: "Insights on web development, AI, automation, and tech trends from the Vortix Tech team.",
+    url: "https://vortixtech.com/blog",
+  }
 };
 
 export const revalidate = 60; // Revalidate every 60 seconds

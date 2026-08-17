@@ -125,11 +125,11 @@ export default function Hero() {
         >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-accent" />
-            <span>100+ Projects Delivered</span>
+            <span>Projects Delivered Globally</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-secondary" />
-            <span>50+ Happy Clients</span>
+            <span>Happy Clients Worldwide</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-gray-800" />

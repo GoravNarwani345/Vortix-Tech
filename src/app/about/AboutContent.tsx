@@ -70,8 +70,8 @@ const timeline = [
   },
   {
     year: "2025",
-    title: "50+ Clients Milestone",
-    description: "Hit 50+ happy clients across web, mobile, and AI automation projects worldwide.",
+    title: "Growing Client Base",
+    description: "Expanded our client portfolio across web, mobile, and AI automation projects worldwide.",
   },
   {
     year: "2026",

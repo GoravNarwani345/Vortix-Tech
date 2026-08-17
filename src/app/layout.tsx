@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import { ContactModalProvider } from "@/components/layout/ContactModalContext";
 import ContactModal from "@/components/layout/ContactModal";
 import CookieConsent from "@/components/layout/CookieConsent";
+import MicrosoftClarity from "@/components/layout/MicrosoftClarity";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,6 +22,10 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://vortixtech.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "Vortix Tech — AI-Powered Digital Solutions",
     template: "%s | Vortix Tech",
@@ -71,7 +76,72 @@ export default function RootLayout({
       className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.clarity.ms" />
+      </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground relative">
+        {/* JSON-LD Schemas */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Vortix Tech",
+              url: "https://vortixtech.com",
+              logo: "https://vortixtech.com/logo.png",
+              contactPoint: {
+                "@type": "ContactPoint",
+                telephone: "+92 335 1283034",
+                contactType: "customer service",
+                email: "techvortix@gmail.com",
+                availableLanguage: ["English", "Urdu"],
+              },
+              sameAs: ["https://www.linkedin.com/company/vortixtech"],
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              url: "https://vortixtech.com",
+              name: "Vortix Tech",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: "https://vortixtech.com/blog?q={search_term_string}",
+                },
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "LocalBusiness",
+              name: "Vortix Tech",
+              image: "https://vortixtech.com/logo.png",
+              url: "https://vortixtech.com",
+              telephone: "+92 335 1283034",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Karachi",
+                addressRegion: "Sindh",
+                addressCountry: "PK",
+              },
+            }),
+          }}
+        />
+        
         <ContactModalProvider>
           <Toaster
             position="bottom-right"
@@ -91,6 +161,7 @@ export default function RootLayout({
           <ChatWidget />
           <ContactModal />
           <CookieConsent />
+          <MicrosoftClarity />
         </ContactModalProvider>
       </body>
     </html>

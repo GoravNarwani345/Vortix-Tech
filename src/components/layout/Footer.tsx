@@ -44,7 +44,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://www.linkedin.com/in/gorav-narwani-360308229"
+                href="https://www.linkedin.com/company/vortixtech"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:border-accent hover:text-accent transition-all shadow-sm hover:shadow-md"
@@ -159,10 +159,10 @@ export default function Footer() {
             © {new Date().getFullYear()} Vortix Tech. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <Link href="/" className="text-gray-500 text-xs hover:text-accent transition-colors">
+            <Link href="/privacy-policy" className="text-gray-500 text-xs hover:text-accent transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/" className="text-gray-500 text-xs hover:text-accent transition-colors">
+            <Link href="/terms-of-service" className="text-gray-500 text-xs hover:text-accent transition-colors">
               Terms of Service
             </Link>
             <button

@@ -3,8 +3,54 @@ import { ArrowLeft, Clock, User, Tag } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { Metadata } from "next";
+import Image from "next/image";
 
 export const revalidate = 60; // Revalidate every 60 seconds
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  
+  const article = await prisma.article.findUnique({
+    where: { slug },
+  });
+
+  if (!article || !article.isPublished) {
+    return {};
+  }
+
+  return {
+    title: article.title,
+    description: article.excerpt,
+    keywords: [article.category, "Vortix Tech blog", "tech article"],
+    alternates: {
+      canonical: `/blog/${article.slug}`,
+    },
+    openGraph: {
+      title: article.title,
+      description: article.excerpt,
+      type: "article",
+      publishedTime: article.createdAt.toISOString(),
+      modifiedTime: article.updatedAt.toISOString(),
+      authors: [article.author],
+      url: `https://vortixtech.com/blog/${article.slug}`,
+      images: [
+        {
+          url: article.image,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: article.excerpt,
+      images: [article.image],
+    },
+  };
+}
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,6 +65,32 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="pt-20 bg-background min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: article.title,
+            image: [article.image],
+            datePublished: article.createdAt.toISOString(),
+            dateModified: article.updatedAt.toISOString(),
+            author: [{
+              "@type": "Organization",
+              name: article.author,
+              url: "https://vortixtech.com"
+            }],
+            publisher: {
+              "@type": "Organization",
+              name: "Vortix Tech",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://vortixtech.com/logo.png"
+              }
+            }
+          })
+        }}
+      />
       {/* Article Header */}
       <section className="relative overflow-hidden bg-white py-24 border-b border-gray-100">
         <div className="container-custom relative z-10 max-w-4xl mx-auto">
@@ -57,11 +129,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Article Content */}
       <section className="py-20">
         <div className="container-custom max-w-4xl mx-auto">
-          <div className="w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-16 shadow-md">
-            <img 
+          <div className="w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-16 shadow-md relative">
+            <Image 
               src={article.image} 
-              alt={article.title} 
-              className="w-full h-full object-cover"
+              alt={article.title}
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 896px"
             />
           </div>
 
