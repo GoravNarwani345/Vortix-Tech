@@ -25,7 +25,7 @@ const services = [
     slug: "app-development",
     category: "Development",
     description:
-      "Native-quality cross-platform mobile applications built with React Native and Flutter.",
+      "Native-quality cross-platform mobile applications built with React Native.",
     features: [
       "Cross-platform iOS & Android",
       "Native performance",

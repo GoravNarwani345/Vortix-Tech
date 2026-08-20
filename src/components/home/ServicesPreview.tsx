@@ -137,7 +137,7 @@ export default function ServicesPreview() {
             const Icon = service.icon;
             return (
                <motion.div key={service.slug} variants={cardVariants} className="h-full">
-                <Link href={`/services/${service.slug}`} className="block h-full">
+                <Link href={`/services`} className="block h-full">
                   <div className="premium-card group cursor-pointer p-8 h-full flex flex-col items-center text-center">
                     {/* Icon */}
                     <div

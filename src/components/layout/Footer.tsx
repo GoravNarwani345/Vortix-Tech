@@ -7,11 +7,11 @@ import { useContactModal } from "./ContactModalContext";
 
 const footerLinks = {
   services: [
-    { label: "App Development", href: "/services/app-development" },
-    { label: "Web Applications", href: "/services/web-applications" },
-    { label: "n8n Automation", href: "/services/n8n-automation" },
-    { label: "ComfyUI Workflows", href: "/services/comfyui-workflows" },
-    { label: "LLM Solutions", href: "/services/llm-solutions" },
+    { label: "App Development", href: "/services" },
+    { label: "Web Applications", href: "/services" },
+    { label: "n8n Automation", href: "/services" },
+    { label: "ComfyUI Workflows", href: "/services" },
+    { label: "LLM Solutions", href: "/services" },
   ],
   company: [
     { label: "About Us", href: "/about" },
@@ -53,7 +53,7 @@ export default function Footer() {
                 <FaLinkedin size={18} />
               </a>
               <a
-                href="https://github.com/GoravNarwani345"
+                href="https://github.com/VortixTech"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:border-accent hover:text-accent transition-all shadow-sm hover:shadow-md"

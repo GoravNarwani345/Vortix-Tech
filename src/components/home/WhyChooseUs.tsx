@@ -5,10 +5,10 @@ import { useEffect, useRef } from "react";
 import { Shield, Zap, Users, Headphones, CheckCircle2 } from "lucide-react";
 
 const stats = [
-  { label: "Projects Delivered", value: 100, suffix: "+" },
-  { label: "Happy Clients", value: 50, suffix: "+" },
-  { label: "Technologies", value: 30, suffix: "+" },
-  { label: "Years Experience", value: 5, suffix: "+" },
+  { label: "Projects Delivered", value: 15, suffix: "+" },
+  { label: "Happy Clients", value: 8, suffix: "+" },
+  { label: "Technologies", value: 15, suffix: "+" },
+  { label: "Team Members", value: 4, suffix: "" },
 ];
 
 const features = [
@@ -28,11 +28,11 @@ const features = [
     icon: Users,
     title: "Dedicated Team",
     description:
-      "Work directly with senior developers and designers who are passionate about bringing your vision to life.",
+      "Work directly with experienced developers and designers who are passionate about bringing your vision to life.",
   },
   {
     icon: Headphones,
-    title: "24/7 Support",
+    title: "Dedicated Support",
     description:
       "Our relationship doesn't end at launch. We provide ongoing support and maintenance to keep you growing.",
   },
@@ -135,7 +135,7 @@ export default function WhyChooseUs() {
                 </div>
                 <div>
                   <h4 className="text-xl font-bold mb-2">Ready to scale?</h4>
-                  <p className="text-gray-400 text-sm">Join dozens of companies that trust Vortix Tech with their digital infrastructure.</p>
+                  <p className="text-gray-400 text-sm">Ready to build your next project with a team that cares about quality?</p>
                 </div>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 blur-3xl rounded-full group-hover:bg-accent/40 transition-colors" />

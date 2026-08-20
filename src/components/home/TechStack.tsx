@@ -8,7 +8,6 @@ import {
   SiTailwindcss,
   SiPostgresql,
   SiMongodb,
-  SiFlutter,
   SiGooglegemini,
 } from "react-icons/si";
 import { Workflow, Palette, Bot } from "lucide-react";
@@ -22,7 +21,6 @@ const technologies = [
   { name: "Tailwind", icon: SiTailwindcss, color: "#06B6D4" },
   { name: "PostgreSQL", icon: SiPostgresql, color: "#4169E1" },
   { name: "MongoDB", icon: SiMongodb, color: "#47A248" },
-  { name: "Flutter", icon: SiFlutter, color: "#02569B" },
   { name: "Docker", icon: FaDocker, color: "#2496ED" },
   { name: "AWS", icon: FaAws, color: "#FF9900" },
   { name: "Gemini", icon: SiGooglegemini, color: "#8E75B2" },

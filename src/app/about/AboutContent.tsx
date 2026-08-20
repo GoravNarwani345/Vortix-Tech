@@ -39,21 +39,15 @@ const team = [
   },
   {
     name: "Raja Hemnani",
-    role: "Founder & Strategy",
+    role: "Founder & Project Manager",
     bio: "Business strategist and project manager ensuring every project is delivered on time and exceeds client expectations.",
     initials: "RH",
   },
   {
     name: "Ronit Mukhi",
-    role: "Founder",
+    role: "Founder & Operations",
     bio: "Driving the vision and operational excellence of Vortix Tech, ensuring we deliver world-class digital experiences.",
     initials: "RM",
-  },
-  {
-    name: "AI Team",
-    role: "AI & Automation Engineers",
-    bio: "Our growing team of specialists in LLM development, n8n workflows, ComfyUI pipelines, and cloud infrastructure.",
-    initials: "VT",
   },
 ];
 
@@ -61,22 +55,22 @@ const timeline = [
   {
     year: "2024",
     title: "Vortix Tech Founded",
-    description: "Started as a freelance dev shop, quickly growing into a full agency with enterprise clients.",
+    description: "Three developers with a shared vision — build AI-powered software that gives businesses an unfair advantage.",
   },
   {
     year: "2024",
-    title: "AI Division Launched",
-    description: "Expanded into AI solutions — LLM integrations, custom ComfyUI workflows, and intelligent chatbots.",
+    title: "AI & Automation Focus",
+    description: "Expanded into LLM integrations, ComfyUI workflows, and n8n automation as core service offerings.",
   },
   {
     year: "2025",
-    title: "Growing Client Base",
-    description: "Expanded our client portfolio across web, mobile, and AI automation projects worldwide.",
+    title: "First Production Clients",
+    description: "Delivered our first wave of client projects across web, mobile, and AI automation.",
   },
   {
     year: "2026",
-    title: "Scaling to Enterprise",
-    description: "Partnering with enterprises to deliver large-scale AI-powered digital transformations.",
+    title: "Building in Public",
+    description: "Launching on freelance platforms and scaling our team to take on bigger projects.",
   },
 ];
 

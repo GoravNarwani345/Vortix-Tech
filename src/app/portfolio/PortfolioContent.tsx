@@ -138,6 +138,30 @@ export default function PortfolioContent({ projects = [] }: { projects: any[] })
               ))}
             </AnimatePresence>
           </motion.div>
+
+          {filtered.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-2xl mx-auto text-center py-16"
+            >
+              <div className="premium-card p-12 bg-white">
+                <h3 className="text-2xl font-serif font-bold text-gray-900 mb-4">
+                  Projects coming soon
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-8">
+                  We're finalizing our case studies. In the meantime, check out our services or get in touch to see our recent work.
+                </p>
+                <button
+                  onClick={openModal}
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gray-900 text-white font-semibold rounded-full transition-all duration-300 hover:bg-black hover:shadow-lg"
+                >
+                  Start a Project
+                </button>
+              </div>
+            </motion.div>
+          )}
+
         </div>
       </section>
 
