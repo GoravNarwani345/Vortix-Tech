@@ -18,11 +18,20 @@ export default function ContactContent() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          service: formData.subject,
+          message: formData.message,
+        }),
+        signal: controller.signal,
       });
 
       if (!res.ok) throw new Error("Failed to submit");
@@ -33,6 +42,7 @@ export default function ContactContent() {
       console.error(error);
       toast.error("Something went wrong. Please try again.");
     } finally {
+      clearTimeout(timeout);
       setIsSubmitting(false);
     }
   };

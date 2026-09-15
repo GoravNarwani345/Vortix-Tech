@@ -32,12 +32,16 @@ export default function ContactModal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
+        signal: controller.signal,
       });
 
       if (!res.ok) throw new Error("Failed to send");
@@ -48,6 +52,7 @@ export default function ContactModal() {
     } catch (error) {
       toast.error("Failed to send message. Please try again or email us directly.");
     } finally {
+      clearTimeout(timeout);
       setIsSubmitting(false);
     }
   };

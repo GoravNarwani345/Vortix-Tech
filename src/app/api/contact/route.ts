@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import prisma from "@/lib/prisma";
 import { getClientIp, rateLimit } from "@/lib/rateLimit";
+import { createMailer } from "@/lib/mailer";
 
 function escapeHtml(value: string): string {
   return value.replace(
@@ -60,35 +60,34 @@ export async function POST(req: NextRequest) {
 
     // If email credentials are configured, send email via SMTP (Hostinger)
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.hostinger.com",
-        port: Number(process.env.SMTP_PORT || 465),
-        secure: (process.env.SMTP_SECURE || "true") === "true",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+      const transporter = createMailer();
 
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: recipient,
-        subject: `New Contact: ${name.replace(/[\r\n]+/g, " ")} - ${service || "General Inquiry"}`,
-        text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || "N/A"}\nService: ${service || "N/A"}\n\nMessage:\n${message}`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px;">
-            <h2 style="color: #00E5FF;">New Contact Form Submission</h2>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr><td style="padding: 8px; font-weight: bold;">Name:</td><td style="padding: 8px;">${escapeHtml(name)}</td></tr>
-              <tr><td style="padding: 8px; font-weight: bold;">Email:</td><td style="padding: 8px;">${escapeHtml(email)}</td></tr>
-              <tr><td style="padding: 8px; font-weight: bold;">Phone:</td><td style="padding: 8px;">${escapeHtml(phone || "N/A")}</td></tr>
-              <tr><td style="padding: 8px; font-weight: bold;">Service:</td><td style="padding: 8px;">${escapeHtml(service || "N/A")}</td></tr>
-            </table>
-            <h3>Message:</h3>
-            <p style="background: #f5f5f5; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${escapeHtml(message)}</p>
-          </div>
-        `,
-      });
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: recipient,
+          replyTo: email,
+          subject: `New Contact: ${name.replace(/[\r\n]+/g, " ")} - ${service || "General Inquiry"}`,
+          text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || "N/A"}\nService: ${service || "N/A"}\n\nMessage:\n${message}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px;">
+              <h2 style="color: #00E5FF;">New Contact Form Submission</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px; font-weight: bold;">Name:</td><td style="padding: 8px;">${escapeHtml(name)}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Email:</td><td style="padding: 8px;">${escapeHtml(email)}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Phone:</td><td style="padding: 8px;">${escapeHtml(phone || "N/A")}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Service:</td><td style="padding: 8px;">${escapeHtml(service || "N/A")}</td></tr>
+              </table>
+              <h3>Message:</h3>
+              <p style="background: #f5f5f5; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${escapeHtml(message)}</p>
+            </div>
+          `,
+        });
+      } catch (mailError) {
+        // Never let a mail failure hang or fail the request — the submission
+        // is still saved to the admin feedback inbox below.
+        console.error("Contact email failed to send:", mailError);
+      }
     } else {
       console.log("Contact form submission (email not configured):", {
         name,
