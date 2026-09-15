@@ -86,7 +86,7 @@ export default function ChatWidget() {
         ...newMessages,
         {
           role: "model",
-          text: "Sorry, I'm having trouble connecting. You can reach us directly on WhatsApp at +92 335 1283034 or email techvortix@gmail.com.",
+          text: "Sorry, I'm having trouble connecting. You can reach us directly on WhatsApp at +92 335 1283034 or email info@thevortixtech.com.",
         },
       ]);
     } finally {

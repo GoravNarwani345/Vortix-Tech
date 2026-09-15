@@ -177,7 +177,7 @@ export default function Navbar() {
                 transition={{ delay: 0.3 }}
                 className="mt-10 text-center"
               >
-                <p className="text-sm text-gray-500">techvortix@gmail.com</p>
+                <p className="text-sm text-gray-500">info@thevortixtech.com</p>
                 <p className="text-sm text-gray-500 mt-1">+92 335 1283034</p>
               </motion.div>
             </div>

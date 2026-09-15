@@ -77,7 +77,7 @@
 - Footer links point to `/` — need real legal pages
 
 #### 8. Professional Email
-- Currently: `techvortix@gmail.com`
+- Currently: `info@thevortixtech.com`
 - Should be: `hello@vortixtech.com` or `team@vortixtech.com`
 - Google Workspace = ~$6/month, massive credibility boost
 
@@ -192,7 +192,7 @@ What sets us apart:
 → Transparent delivery: Daily updates, weekly demos, no surprises
 → End-to-end ownership: From design to deployment to ongoing support
 
-📧 techvortix@gmail.com
+📧 info@thevortixtech.com
 🌐 vortixtech.com
 📱 +92 335 1283034
 

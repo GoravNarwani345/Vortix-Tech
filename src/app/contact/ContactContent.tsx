@@ -94,8 +94,8 @@ export default function ContactContent() {
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm font-medium mb-1">Email Us</p>
-                      <a href="mailto:techvortix@gmail.com" className="text-gray-900 font-bold text-lg hover:text-accent transition-colors">
-                        techvortix@gmail.com
+                      <a href="mailto:info@thevortixtech.com" className="text-gray-900 font-bold text-lg hover:text-accent transition-colors">
+                        info@thevortixtech.com
                       </a>
                     </div>
                   </div>

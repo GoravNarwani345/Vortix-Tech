@@ -263,10 +263,10 @@ export default function TermsOfServicePage() {
                 <li>
                   <strong>Email:</strong>{" "}
                   <a
-                    href="mailto:techvortix@gmail.com"
+                    href="mailto:info@thevortixtech.com"
                     className="text-accent hover:underline"
                   >
-                    techvortix@gmail.com
+                    info@thevortixtech.com
                   </a>
                 </li>
                 <li>

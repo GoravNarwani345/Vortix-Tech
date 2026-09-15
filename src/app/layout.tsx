@@ -96,7 +96,7 @@ export default function RootLayout({
                 "@type": "ContactPoint",
                 telephone: "+92 335 1283034",
                 contactType: "customer service",
-                email: "techvortix@gmail.com",
+                email: "info@thevortixtech.com",
                 availableLanguage: ["English", "Urdu"],
               },
               sameAs: [

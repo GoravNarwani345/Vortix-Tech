@@ -56,12 +56,14 @@ export async function POST(req: NextRequest) {
     const recipient =
       process.env.CONTACT_EMAIL ||
       process.env.EMAIL_USER ||
-      "techvortix@gmail.com";
+      "info@thevortixtech.com";
 
-    // If email credentials are configured, send email
+    // If email credentials are configured, send email via SMTP (Hostinger)
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       const transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: process.env.SMTP_HOST || "smtp.hostinger.com",
+        port: Number(process.env.SMTP_PORT || 465),
+        secure: (process.env.SMTP_SECURE || "true") === "true",
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
       });
 
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
         to: recipient,
         subject: `New Contact: ${name.replace(/[\r\n]+/g, " ")} - ${service || "General Inquiry"}`,
         text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || "N/A"}\nService: ${service || "N/A"}\n\nMessage:\n${message}`,

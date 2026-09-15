@@ -187,10 +187,10 @@ export default function PrivacyPolicyPage() {
               <p className="mt-4">
                 To exercise any of these rights, please contact us at{" "}
                 <a
-                  href="mailto:techvortix@gmail.com"
+                  href="mailto:info@thevortixtech.com"
                   className="text-accent hover:underline"
                 >
-                  techvortix@gmail.com
+                  info@thevortixtech.com
                 </a>
                 .
               </p>
@@ -233,10 +233,10 @@ export default function PrivacyPolicyPage() {
                 <li>
                   <strong>Email:</strong>{" "}
                   <a
-                    href="mailto:techvortix@gmail.com"
+                    href="mailto:info@thevortixtech.com"
                     className="text-accent hover:underline"
                   >
-                    techvortix@gmail.com
+                    info@thevortixtech.com
                   </a>
                 </li>
                 <li>
