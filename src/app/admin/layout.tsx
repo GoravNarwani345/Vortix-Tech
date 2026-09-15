@@ -7,13 +7,13 @@ import {
   LayoutDashboard,
   MessageSquare,
   LogOut,
-  Zap,
   Menu,
   X,
   FileText,
   Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import LogoMark from "@/components/layout/LogoMark";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -49,9 +49,7 @@ export default function AdminLayout({
       <aside className="hidden lg:flex w-64 flex-col bg-card-bg border-r border-card-border fixed h-full z-20">
         <div className="h-20 flex items-center px-6 border-b border-card-border">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-secondary flex items-center justify-center">
-              <Zap size={18} className="text-white" />
-            </div>
+            <LogoMark className="w-8 h-8" />
             <span className="text-lg font-bold text-foreground">
               Vortix<span className="text-accent">Admin</span>
             </span>
@@ -94,9 +92,7 @@ export default function AdminLayout({
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card-bg border-b border-card-border z-30 flex items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-secondary flex items-center justify-center">
-            <Zap size={18} className="text-white" />
-          </div>
+          <LogoMark className="w-8 h-8" />
           <span className="text-lg font-bold text-foreground">Admin</span>
         </Link>
         <button

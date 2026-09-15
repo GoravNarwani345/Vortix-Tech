@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Zap, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { FaLinkedin, FaGithub, FaWhatsapp } from "react-icons/fa";
+import { FaUpwork } from "react-icons/fa6";
 import { useContactModal } from "./ContactModalContext";
+import LogoMark from "./LogoMark";
 
 const footerLinks = {
   services: [
@@ -30,9 +32,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-6 group">
-              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white transition-transform group-hover:scale-105">
-                <Zap size={20} className="text-white" />
-              </div>
+              <LogoMark className="transition-transform group-hover:scale-105" />
               <span className="text-xl font-serif font-bold text-gray-900 leading-tight">
                 Vortix<span className="text-accent">Tech</span>
               </span>
@@ -69,6 +69,15 @@ export default function Footer() {
                 aria-label="WhatsApp"
               >
                 <FaWhatsapp size={18} />
+              </a>
+              <a
+                href="https://www.upwork.com/agencies/2094139614727200625/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:border-green-600 hover:text-green-600 transition-all shadow-sm hover:shadow-md"
+                aria-label="Upwork"
+              >
+                <FaUpwork size={18} />
               </a>
             </div>
           </div>

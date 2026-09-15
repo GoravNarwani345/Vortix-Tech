@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Lock, Mail, Loader2, Zap } from "lucide-react";
+import { Lock, Mail, Loader2 } from "lucide-react";
 import GlowOrb from "@/components/effects/GlowOrb";
+import LogoMark from "@/components/layout/LogoMark";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -44,9 +45,7 @@ export default function AdminLogin() {
       
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-secondary flex items-center justify-center mx-auto mb-6 shadow-glow">
-            <Zap size={32} className="text-white" />
-          </div>
+          <LogoMark className="w-16 h-16 mx-auto mb-6 shadow-glow" />
           <h1 className="text-3xl font-bold text-foreground mb-2">Vortix Tech Admin</h1>
           <p className="text-foreground-muted">Sign in to manage your digital empire</p>
         </div>

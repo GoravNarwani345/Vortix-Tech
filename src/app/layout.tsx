@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -15,9 +15,9 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument",
-  weight: "400",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  weight: ["500", "600", "700", "800"],
   subsets: ["latin"],
 });
 
@@ -73,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
+      className={`${inter.variable} ${plusJakarta.variable} antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -99,7 +99,10 @@ export default function RootLayout({
                 email: "techvortix@gmail.com",
                 availableLanguage: ["English", "Urdu"],
               },
-              sameAs: ["https://www.linkedin.com/company/vortixtech"],
+              sameAs: [
+                "https://www.linkedin.com/company/vortixtech",
+                "https://www.upwork.com/agencies/2094139614727200625/",
+              ],
             }),
           }}
         />

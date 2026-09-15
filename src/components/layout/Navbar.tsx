@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronRight, Zap } from "lucide-react";
+import { Menu, X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useContactModal } from "./ContactModalContext";
+import LogoMark from "./LogoMark";
 
 const navItems = [
   { label: "Home", href: "/" },
@@ -62,9 +63,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-[60px]">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white transition-transform group-hover:scale-105">
-                <Zap size={20} className="text-white" />
-              </div>
+              <LogoMark className="transition-transform group-hover:scale-105" />
               <div className="flex flex-col">
                 <span className="text-xl font-serif font-bold text-gray-900 leading-tight">
                   Vortix<span className="text-accent">Tech</span>
