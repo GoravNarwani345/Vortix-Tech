@@ -96,7 +96,7 @@ export default function AboutContent() {
               <span className="text-accent">Vortix Tech</span>
             </h1>
             <p className="text-gray-600 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
-              We're a passionate team of developers, designers, and AI
+              We&apos;re a passionate team of developers, designers, and AI
               engineers building the future of digital technology. From startups
               to enterprises, we transform ideas into powerful digital
               experiences.
@@ -145,7 +145,7 @@ export default function AboutContent() {
               <p className="text-gray-600 text-lg leading-relaxed">
                 To become the leading AI-first tech agency in the region,
                 recognized for innovation, quality, and transformative impact on
-                our clients' businesses.
+                our clients&apos; businesses.
               </p>
             </motion.div>
           </div>

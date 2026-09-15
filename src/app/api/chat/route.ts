@@ -1,8 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
+
+const MAX_MESSAGES = 20;
+const MAX_CHARS_PER_MESSAGE = 2000;
+
+type ChatHistoryEntry = {
+  role?: string;
+  parts?: { text?: unknown }[];
+};
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limit = rateLimit(`chat:${ip}`, 20, 60 * 1000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many messages. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+      );
+    }
+
     const { messageHistory } = await req.json();
+
+    if (!Array.isArray(messageHistory) || messageHistory.length === 0) {
+      return NextResponse.json(
+        { error: "messageHistory must be a non-empty array." },
+        { status: 400 }
+      );
+    }
+
+    const contents = messageHistory
+      .slice(-MAX_MESSAGES)
+      .map((entry: ChatHistoryEntry) => {
+        const role = entry?.role === "model" ? "model" : "user";
+        const rawText = entry?.parts?.[0]?.text;
+        const text =
+          typeof rawText === "string"
+            ? rawText.slice(0, MAX_CHARS_PER_MESSAGE)
+            : "";
+        return { role, parts: [{ text }] };
+      });
+
+    if (contents.every((c) => c.parts[0].text.length === 0)) {
+      return NextResponse.json(
+        { error: "No message content provided." },
+        { status: 400 }
+      );
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -56,8 +100,8 @@ Your goals:
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         system_instruction: systemInstruction,
-        contents: messageHistory,
-        generationConfig: { temperature: 0.7 },
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
       }),
     });
 

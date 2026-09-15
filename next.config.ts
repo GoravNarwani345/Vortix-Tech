@@ -4,12 +4,12 @@ const nextConfig: NextConfig = {
   // Don't expose "X-Powered-By: Next.js" header
   poweredByHeader: false,
 
-  // Allow external images (portfolio, blog cover images, etc.)
+  // Allow external images from trusted hosts only
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "image.pollinations.ai",
       },
     ],
   },

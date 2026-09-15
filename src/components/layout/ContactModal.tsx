@@ -87,7 +87,7 @@ export default function ContactModal() {
             
             <div className="p-6 sm:p-8 flex-1">
               <p className="text-gray-600 mb-8">
-                Fill out the form below and we'll get back to you within 24 hours with a custom proposal.
+                Fill out the form below and we&apos;ll get back to you within 24 hours with a custom proposal.
               </p>
               
               <form onSubmit={handleSubmit} className="space-y-6">

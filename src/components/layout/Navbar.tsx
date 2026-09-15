@@ -28,10 +28,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [pathname]);
-
   // Prevent scroll when mobile menu open
   useEffect(() => {
     if (isMobileOpen) {
@@ -143,6 +139,7 @@ export default function Navbar() {
                     >
                       <Link
                         href={item.href}
+                        onClick={() => setIsMobileOpen(false)}
                         className={cn(
                           "flex items-center justify-between p-4 rounded-xl text-lg transition-all border",
                           isActive

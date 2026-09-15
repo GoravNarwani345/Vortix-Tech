@@ -1,15 +1,30 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { constantTimeEqual } from "@/lib/session";
 
 // This should be triggered by a Cron service (like Vercel Cron or GitHub Actions)
 export async function GET(req: Request) {
   try {
-    // 1. Basic Security Check (Optional, but recommended)
+    // 1. Required Security Check
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      return NextResponse.json(
+        { error: "CRON_SECRET is not configured" },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const cronKey = searchParams.get("key");
-    // Ensure you set CRON_SECRET in your .env if you want to secure this
-    if (process.env.CRON_SECRET && cronKey !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: "Unauthorized cron access" }, { status: 401 });
+    const providedKey =
+      searchParams.get("key") ||
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
+      "";
+
+    if (!(await constantTimeEqual(providedKey, cronSecret))) {
+      return NextResponse.json(
+        { error: "Unauthorized cron access" },
+        { status: 401 }
+      );
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -93,8 +108,14 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ success: true, article }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Cron Error:", error);
-    return NextResponse.json({ error: "Cron job failed", details: error.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Cron job failed",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

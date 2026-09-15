@@ -5,12 +5,21 @@ import Link from "next/link";
 import { Plus, Edit, Trash2, ExternalLink, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
+type Project = {
+  id: string;
+  title: string;
+  category: string;
+  images: string[];
+  liveUrl?: string | null;
+  isPublished: boolean;
+  createdAt: string;
+};
+
 export default function AdminPortfolioPage() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProjects = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/portfolio");
       const data = await res.json();
@@ -19,7 +28,7 @@ export default function AdminPortfolioPage() {
       } else {
         toast.error("Failed to load projects");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred while loading projects");
     } finally {
       setLoading(false);
@@ -27,7 +36,21 @@ export default function AdminPortfolioPage() {
   };
 
   useEffect(() => {
-    fetchProjects();
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/portfolio");
+        const data = await res.json();
+        if (active && data.success) setProjects(data.data);
+      } catch {
+        if (active) toast.error("An error occurred while loading projects");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -45,7 +68,7 @@ export default function AdminPortfolioPage() {
       } else {
         toast.error(data.error || "Failed to delete project");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred");
     }
   };
@@ -70,7 +93,10 @@ export default function AdminPortfolioPage() {
         <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
           <h2 className="font-semibold text-gray-700">All Projects</h2>
           <button
-            onClick={fetchProjects}
+            onClick={() => {
+              setLoading(true);
+              void fetchProjects();
+            }}
             className="p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100"
           >
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />

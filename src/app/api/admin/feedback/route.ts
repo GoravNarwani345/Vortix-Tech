@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { cookies } from "next/headers";
-
-async function isAuthenticated() {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get("admin_auth")?.value;
-  return authCookie === "true"; // Simple check for now
-}
+import { isAuthenticated } from "@/lib/auth";
 
 export async function GET() {
   if (!(await isAuthenticated())) {
@@ -18,9 +12,12 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json({ success: true, data: feedbacks }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch feedback", details: error.message },
+      {
+        error: "Failed to fetch feedback",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
@@ -43,9 +40,12 @@ export async function PATCH(req: Request) {
     });
 
     return NextResponse.json({ success: true, data: updated }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update feedback status", details: error.message },
+      {
+        error: "Failed to update feedback status",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

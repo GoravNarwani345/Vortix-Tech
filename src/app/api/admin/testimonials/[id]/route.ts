@@ -12,15 +12,21 @@ export async function GET(
   }
 
   try {
-    const article = await prisma.article.findUnique({ where: { id } });
-    if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    const testimonial = await prisma.testimonial.findUnique({ where: { id } });
+    if (!testimonial) {
+      return NextResponse.json(
+        { error: "Testimonial not found" },
+        { status: 404 }
+      );
     }
-    return NextResponse.json({ success: true, data: article }, { status: 200 });
+    return NextResponse.json(
+      { success: true, data: testimonial },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Failed to fetch article",
+        error: "Failed to fetch testimonial",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -39,29 +45,30 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { title, category, excerpt, content, image, readTime, isPublished, author, slug } =
-      body;
+    const { name, role, content, rating, isPublished } = body;
 
-    const article = await prisma.article.update({
+    const parsedRating = Number(rating);
+    const testimonial = await prisma.testimonial.update({
       where: { id },
       data: {
-        ...(title !== undefined ? { title } : {}),
-        ...(category !== undefined ? { category } : {}),
-        ...(excerpt !== undefined ? { excerpt } : {}),
+        ...(name !== undefined ? { name } : {}),
+        ...(role !== undefined ? { role } : {}),
         ...(content !== undefined ? { content } : {}),
-        ...(image !== undefined ? { image } : {}),
-        ...(readTime !== undefined ? { readTime } : {}),
+        ...(Number.isInteger(parsedRating)
+          ? { rating: Math.min(5, Math.max(1, parsedRating)) }
+          : {}),
         ...(isPublished !== undefined ? { isPublished } : {}),
-        ...(author !== undefined ? { author } : {}),
-        ...(slug !== undefined ? { slug } : {}),
       },
     });
 
-    return NextResponse.json({ success: true, data: article }, { status: 200 });
+    return NextResponse.json(
+      { success: true, data: testimonial },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Failed to update article",
+        error: "Failed to update testimonial",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -79,15 +86,12 @@ export async function DELETE(
   }
 
   try {
-    await prisma.article.delete({
-      where: { id },
-    });
-
+    await prisma.testimonial.delete({ where: { id } });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Failed to delete article",
+        error: "Failed to delete testimonial",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

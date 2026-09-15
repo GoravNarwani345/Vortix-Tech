@@ -20,10 +20,16 @@ export const metadata: Metadata = {
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function PortfolioPage() {
-  const dbProjects = await prisma.project.findMany({
-    where: { isPublished: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let dbProjects: Awaited<ReturnType<typeof prisma.project.findMany>> = [];
+
+  try {
+    dbProjects = await prisma.project.findMany({
+      where: { isPublished: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    // Database may not be available during build/runtime
+  }
 
   return <PortfolioContent projects={dbProjects} />;
 }

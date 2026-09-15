@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Plus, Edit2, Trash2, Eye, Loader2 } from "lucide-react";
+import { Plus, Trash2, Eye, Edit2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -19,22 +18,37 @@ export default function BlogAdmin() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchArticles();
-  }, []);
-
   const fetchArticles = async () => {
     try {
       const res = await fetch("/api/admin/blog");
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setArticles(data.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load articles");
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/blog");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        if (active) setArticles(data.data);
+      } catch {
+        if (active) toast.error("Failed to load articles");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const deleteArticle = async (id: string) => {
     if (!confirm("Are you sure you want to delete this article?")) return;
@@ -111,6 +125,13 @@ export default function BlogAdmin() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-3">
+                        <Link
+                          href={`/admin/blog/edit/${article.id}`}
+                          className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </Link>
                         <Link
                           href={`/blog/${article.slug}`}
                           target="_blank"

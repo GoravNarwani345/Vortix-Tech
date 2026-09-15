@@ -29,7 +29,7 @@ export default function CTA() {
             </div>
 
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold text-gray-900 mb-6 leading-tight">
-              Let's build something <br className="hidden sm:block" />
+              Let&apos;s build something <br className="hidden sm:block" />
               <span className="text-accent">amazing together.</span>
             </h2>
 

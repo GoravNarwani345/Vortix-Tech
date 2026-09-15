@@ -9,6 +9,11 @@ type Message = {
   text: string;
 };
 
+const WELCOME_MESSAGE: Message = {
+  role: "model",
+  text: "Hi! 👋 I'm the Vortix Tech AI assistant. How can I help you today? Ask me about our services, pricing, or anything else!",
+};
+
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -16,28 +21,20 @@ export default function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history
+  // Load chat history (must run after mount to stay hydration-safe)
   useEffect(() => {
+    let initial: Message[] = [WELCOME_MESSAGE];
     const saved = localStorage.getItem("vortix_chat");
     if (saved) {
       try {
-        setMessages(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) initial = parsed;
       } catch {
-        setMessages([
-          {
-            role: "model",
-            text: "Hi! 👋 I'm the Vortix Tech AI assistant. How can I help you today? Ask me about our services, pricing, or anything else!",
-          },
-        ]);
+        initial = [WELCOME_MESSAGE];
       }
-    } else {
-      setMessages([
-        {
-          role: "model",
-          text: "Hi! 👋 I'm the Vortix Tech AI assistant. How can I help you today? Ask me about our services, pricing, or anything else!",
-        },
-      ]);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is unavailable during SSR
+    setMessages(initial);
   }, []);
 
   // Save chat history

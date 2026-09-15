@@ -8,14 +8,17 @@ export async function GET() {
   }
 
   try {
-    const articles = await prisma.article.findMany({
+    const testimonials = await prisma.testimonial.findMany({
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ success: true, data: articles }, { status: 200 });
+    return NextResponse.json(
+      { success: true, data: testimonials },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Failed to fetch articles",
+        error: "Failed to fetch testimonials",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -30,35 +33,36 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { title, slug, category, excerpt, content, image, readTime, isPublished, author } =
-      body;
+    const { name, role, content, rating, isPublished } = body;
 
-    if (!title || !slug || !content) {
+    if (!name || !content) {
       return NextResponse.json(
-        { error: "Title, slug, and content are required" },
+        { error: "Name and content are required" },
         { status: 400 }
       );
     }
 
-    const article = await prisma.article.create({
+    const parsedRating = Number(rating);
+    const testimonial = await prisma.testimonial.create({
       data: {
-        title,
-        slug,
-        category: category || "Technology",
-        excerpt: excerpt || "",
+        name,
+        role: role || "",
         content,
-        image: image || "",
-        readTime: readTime || "3 min read",
+        rating: Number.isInteger(parsedRating)
+          ? Math.min(5, Math.max(1, parsedRating))
+          : 5,
         isPublished: isPublished ?? true,
-        ...(author ? { author } : {}),
       },
     });
 
-    return NextResponse.json({ success: true, data: article }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: testimonial },
+      { status: 201 }
+    );
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Failed to create article",
+        error: "Failed to create testimonial",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

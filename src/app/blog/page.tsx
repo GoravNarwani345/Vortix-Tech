@@ -20,10 +20,16 @@ export const metadata: Metadata = {
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function BlogPage() {
-  const articles = await prisma.article.findMany({
-    where: { isPublished: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let articles: Awaited<ReturnType<typeof prisma.article.findMany>> = [];
+
+  try {
+    articles = await prisma.article.findMany({
+      where: { isPublished: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    // Database may not be available during build/runtime
+  }
 
   return <BlogContent posts={articles} />;
 }

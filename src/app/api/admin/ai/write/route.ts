@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-
-async function isAuthenticated() {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get("admin_auth")?.value;
-  return authCookie === "true";
-}
+import { isAuthenticated } from "@/lib/auth";
 
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
@@ -75,9 +69,12 @@ export async function POST(req: Request) {
       } 
     }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to generate article", details: error.message },
+      {
+        error: "Failed to generate article",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

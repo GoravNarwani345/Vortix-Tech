@@ -279,8 +279,8 @@ export default function ServicesContent() {
               Need a Custom Solution?
             </h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
-              Don't see exactly what you need? We love custom projects.
-              Let's discuss your unique requirements.
+              Don&apos;t see exactly what you need? We love custom projects.
+              Let&apos;s discuss your unique requirements.
             </p>
             <button
               onClick={openModal}

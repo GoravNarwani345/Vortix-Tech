@@ -59,12 +59,12 @@ export default function ContactContent() {
               Get in Touch
             </span>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-serif font-bold text-gray-900 mt-6 mb-8">
-              Let's Build Something <br className="hidden sm:block" />
+              Let&apos;s Build Something <br className="hidden sm:block" />
               <span className="text-accent">Amazing</span>
             </h1>
             <p className="text-gray-600 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-              Have a project in mind? We'd love to hear about it. Send us a
-              message and we'll get back to you as soon as possible.
+              Have a project in mind? We&apos;d love to hear about it. Send us a
+              message and we&apos;ll get back to you as soon as possible.
             </p>
           </motion.div>
         </div>

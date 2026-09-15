@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  MessageSquare, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  MessageSquare,
+  LogOut,
   Zap,
   Menu,
   X,
-  FileText
+  FileText,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +19,8 @@ const sidebarLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Portfolio", href: "/admin/portfolio", icon: LayoutDashboard },
   { name: "Blog", href: "/admin/blog", icon: FileText },
+  { name: "Testimonials", href: "/admin/testimonials", icon: Star },
   { name: "Feedback", href: "/admin/feedback", icon: MessageSquare },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({

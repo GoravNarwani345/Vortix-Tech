@@ -15,7 +15,7 @@
 | **Frontend** | React 19, Framer Motion, Lucide Icons |
 | **Styling** | Tailwind CSS 4 |
 | **Database** | PostgreSQL + Prisma ORM |
-| **Auth** | NextAuth.js v5 |
+| **Auth** | Signed HMAC session cookie (admin) |
 | **AI** | Google Gemini API (chat widget + blog generation) |
 | **Email** | Nodemailer (contact form) |
 | **Deployment** | Vercel |
@@ -49,28 +49,32 @@
 Copy `.env` and fill in real values:
 
 ```env
+DATABASE_URL="postgresql://user:pass@host:5432/vortix_tech"
 GEMINI_API_KEY=your_gemini_api_key
 EMAIL_USER=techvortix@gmail.com
 EMAIL_PASS=your_gmail_app_password
-DATABASE_URL="postgresql://user:pass@host:5432/vortix_tech"
-NEXTAUTH_SECRET=your-secure-random-secret
-NEXTAUTH_URL=http://localhost:3000
+CONTACT_EMAIL=techvortix@gmail.com
 ADMIN_EMAIL=techvortix@gmail.com
 ADMIN_PASSWORD=your_secure_password
+ADMIN_SESSION_SECRET=your-long-random-session-secret
+CRON_SECRET=your_cron_secret
 ```
+
+See `.env.example` for the full list. `ADMIN_SESSION_SECRET` signs the admin
+session cookie; `CRON_SECRET` protects `/api/cron/daily-blog`.
 
 ### Install & Run
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (runs prisma generate via postinstall)
+bun install
 
-# Generate Prisma client & push schema
-npx prisma generate
-npx prisma db push
+# Push schema & seed starter content
+bunx prisma db push
+bunx prisma db seed
 
 # Start development server
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
@@ -112,13 +116,17 @@ src/
 
 ## Deployment
 
-Deploy to Vercel:
+Build for production:
 
 ```bash
-npm run build
+bun run build
+bun run start
 ```
 
-Set all environment variables in Vercel dashboard. The PostgreSQL database should be accessible from Vercel's network.
+Set all environment variables (see `.env.example`). The PostgreSQL database
+must be reachable at runtime; pages degrade gracefully with empty content if it
+is unavailable. Schedule `/api/cron/daily-blog?key=$CRON_SECRET` daily to
+auto-publish a blog post.
 
 ---
 

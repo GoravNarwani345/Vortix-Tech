@@ -8,7 +8,17 @@ import { useContactModal } from "@/components/layout/ContactModalContext";
 
 const categories = ["All", "Web App", "Mobile App", "AI & Automation", "Design & Cloud"];
 
-export default function PortfolioContent({ projects = [] }: { projects: any[] }) {
+type Project = {
+  title: string;
+  category: string;
+  description: string;
+  images: string[];
+  tags: string;
+  liveUrl?: string | null;
+  githubUrl?: string | null;
+};
+
+export default function PortfolioContent({ projects = [] }: { projects: Project[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
   const { openModal } = useContactModal();
 
@@ -79,11 +89,19 @@ export default function PortfolioContent({ projects = [] }: { projects: any[] })
                   <div className="relative w-full h-64 overflow-hidden">
                     <div className="absolute inset-0 bg-black/40 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
-                    <img
-                      src={project.images && project.images.length > 0 ? project.images[0] : ""}
-                      alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
+                    {project.images && project.images.length > 0 ? (
+                      <img
+                        src={project.images[0]}
+                        alt={project.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent/10 to-secondary/10">
+                        <span className="text-4xl font-serif font-bold text-accent/60">
+                          {project.title?.slice(0, 1) ?? "V"}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Overlay Links */}
                     <div className="absolute inset-0 z-20 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -150,7 +168,7 @@ export default function PortfolioContent({ projects = [] }: { projects: any[] })
                   Projects coming soon
                 </h3>
                 <p className="text-gray-600 leading-relaxed mb-8">
-                  We're finalizing our case studies. In the meantime, check out our services or get in touch to see our recent work.
+                  We&apos;re finalizing our case studies. In the meantime, check out our services or get in touch to see our recent work.
                 </p>
                 <button
                   onClick={openModal}
@@ -178,7 +196,7 @@ export default function PortfolioContent({ projects = [] }: { projects: any[] })
             </h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
               Join the growing list of successful businesses leveraging our
-              technology solutions. Let's build something amazing together.
+              technology solutions. Let&apos;s build something amazing together.
             </p>
             <button
               onClick={openModal}

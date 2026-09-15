@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-
-async function isAuthenticated() {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get("admin_auth")?.value;
-  return authCookie === "true";
-}
+import { isAuthenticated } from "@/lib/auth";
 
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
@@ -36,10 +30,10 @@ export async function POST(req: Request) {
     const data = await response.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
-    let topics = [];
+    let topics: string[] = [];
     try {
       topics = JSON.parse(reply.replace(/```json/g, "").replace(/```/g, "").trim());
-    } catch (e) {
+    } catch {
       // Fallback
       topics = [
         "The Future of AI Agents in 2026",
@@ -51,9 +45,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, topics }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to generate topics", details: error.message },
+      {
+        error: "Failed to generate topics",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

@@ -31,7 +31,6 @@ export default function AdminFeedback() {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
 
   const fetchFeedbacks = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/feedback");
       if (res.ok) {
@@ -46,7 +45,23 @@ export default function AdminFeedback() {
   };
 
   useEffect(() => {
-    fetchFeedbacks();
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/feedback");
+        if (res.ok) {
+          const data = await res.json();
+          if (active) setFeedbacks(data.data);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
@@ -108,7 +123,10 @@ export default function AdminFeedback() {
             />
           </div>
           <button 
-            onClick={fetchFeedbacks}
+            onClick={() => {
+              setLoading(true);
+              void fetchFeedbacks();
+            }}
             className="w-full sm:w-auto p-2.5 bg-card-bg border border-card-border rounded-xl text-foreground-muted hover:text-accent hover:border-accent/50 transition-all flex items-center justify-center"
           >
             <RefreshCcw size={18} className={loading ? "animate-spin" : ""} />

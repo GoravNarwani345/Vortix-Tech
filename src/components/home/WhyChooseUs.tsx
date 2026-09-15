@@ -47,7 +47,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
     const animation = animate(count, value, {
       duration: 2,
       delay: 0.2,
-      ease: "easeOut" as any,
+      ease: "easeOut",
     });
     return animation.stop;
   }, [value, count]);
@@ -80,7 +80,7 @@ export default function WhyChooseUs() {
               A partner you can rely on to scale
             </h2>
             <p className="text-gray-600 text-lg mb-10 leading-relaxed">
-              We don't just write code; we build digital businesses. 
+              We don&apos;t just write code; we build digital businesses. 
               Our team of experts combines deep technical knowledge with strategic 
               thinking to deliver solutions that give you a competitive edge.
             </p>

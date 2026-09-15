@@ -73,22 +73,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Database may not be available during build
   }
 
-  // Dynamic portfolio projects
-  let projectRoutes: MetadataRoute.Sitemap = [];
-  try {
-    const projects = await prisma.project.findMany({
-      where: { isPublished: true },
-      select: { id: true, updatedAt: true },
-    });
-    projectRoutes = projects.map((project) => ({
-      url: `${BASE_URL}/portfolio/${project.id}`,
-      lastModified: project.updatedAt,
-      changeFrequency: "monthly" as const,
-      priority: 0.5,
-    }));
-  } catch {
-    // Database may not be available during build
-  }
+  // Note: portfolio projects are listed on /portfolio (no dedicated detail
+  // route exists yet), so they are intentionally not emitted as URLs here.
 
-  return [...staticRoutes, ...blogRoutes, ...projectRoutes];
+  return [...staticRoutes, ...blogRoutes];
 }
