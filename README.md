@@ -51,13 +51,15 @@ Copy `.env` and fill in real values:
 ```env
 DATABASE_URL="postgresql://user:pass@host:5432/vortix_tech"
 GEMINI_API_KEY=your_gemini_api_key
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM="Vortix Tech <noreply@thevortixtech.com>"
+CONTACT_EMAIL=info@thevortixtech.com
+# SMTP fallback (optional, used only if RESEND_API_KEY is empty)
 SMTP_HOST=smtp.hostinger.com
 SMTP_PORT=465
 SMTP_SECURE=true
 EMAIL_USER=info@thevortixtech.com
 EMAIL_PASS=your_hostinger_email_password
-EMAIL_FROM=info@thevortixtech.com
-CONTACT_EMAIL=info@thevortixtech.com
 ADMIN_EMAIL=info@thevortixtech.com
 ADMIN_PASSWORD=your_secure_password
 ADMIN_SESSION_SECRET=your-long-random-session-secret
