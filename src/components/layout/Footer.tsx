@@ -62,7 +62,7 @@ export default function Footer() {
                 <FaGithub size={18} />
               </a>
               <a
-                href="https://wa.me/923351283034"
+                href="https://wa.me/923142189730"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:border-green-500 hover:text-green-500 transition-all shadow-sm hover:shadow-md"
@@ -145,12 +145,20 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-3">
                 <Phone size={16} className="text-accent mt-0.5 shrink-0" />
-                <a
-                  href="tel:+923351283034"
-                  className="text-gray-600 text-sm hover:text-accent transition-colors"
-                >
-                  +92 335 1283034
-                </a>
+                <div className="flex flex-col gap-1">
+                  <a
+                    href="tel:+923142189730"
+                    className="text-gray-600 text-sm hover:text-accent transition-colors"
+                  >
+                    +92 314 2189730
+                  </a>
+                  <a
+                    href="tel:+12097795428"
+                    className="text-gray-600 text-sm hover:text-accent transition-colors"
+                  >
+                    +1 209 779 5428
+                  </a>
+                </div>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin size={16} className="text-accent mt-0.5 shrink-0" />

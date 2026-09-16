@@ -194,7 +194,7 @@ What sets us apart:
 
 📧 info@thevortixtech.com
 🌐 vortixtech.com
-📱 +92 335 1283034
+📱 +92 314 2189730 / +1 209 779 5428
 
 Specialties: Next.js, React Native, AI Agents, n8n Automation, ComfyUI, LLM Integration, Full-Stack Development
 ```

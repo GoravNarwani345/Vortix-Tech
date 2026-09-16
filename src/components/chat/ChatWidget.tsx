@@ -86,7 +86,7 @@ export default function ChatWidget() {
         ...newMessages,
         {
           role: "model",
-          text: "Sorry, I'm having trouble connecting. You can reach us directly on WhatsApp at +92 335 1283034 or email info@thevortixtech.com.",
+          text: "Sorry, I'm having trouble connecting. You can reach us directly on WhatsApp at +92 314 2189730 or +1 209 779 5428, or email info@thevortixtech.com.",
         },
       ]);
     } finally {
@@ -123,7 +123,7 @@ export default function ChatWidget() {
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href="https://wa.me/923351283034"
+                  href="https://wa.me/923142189730"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs font-bold bg-green-50 text-green-600 border border-green-100 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"

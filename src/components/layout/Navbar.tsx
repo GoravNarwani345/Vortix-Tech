@@ -178,7 +178,8 @@ export default function Navbar() {
                 className="mt-10 text-center"
               >
                 <p className="text-sm text-gray-500">info@thevortixtech.com</p>
-                <p className="text-sm text-gray-500 mt-1">+92 335 1283034</p>
+                <p className="text-sm text-gray-500 mt-1">+92 314 2189730</p>
+                <p className="text-sm text-gray-500 mt-1">+1 209 779 5428</p>
               </motion.div>
             </div>
           </motion.div>

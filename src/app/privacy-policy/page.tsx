@@ -251,10 +251,17 @@ export default function PrivacyPolicyPage() {
                 <li>
                   <strong>Phone:</strong>{" "}
                   <a
-                    href="tel:+923351283034"
+                    href="tel:+923142189730"
                     className="text-accent hover:underline"
                   >
-                    +92 335 1283034
+                    +92 314 2189730
+                  </a>
+                  {" "}or{" "}
+                  <a
+                    href="tel:+12097795428"
+                    className="text-accent hover:underline"
+                  >
+                    +1 209 779 5428
                   </a>
                 </li>
               </ul>

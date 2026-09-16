@@ -116,9 +116,14 @@ export default function ContactContent() {
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm font-medium mb-1">Call Us</p>
-                      <a href="tel:+923351283034" className="text-gray-900 font-bold text-lg hover:text-accent transition-colors">
-                        +92 335 1283034
-                      </a>
+                      <div className="flex flex-col">
+                        <a href="tel:+923142189730" className="text-gray-900 font-bold text-lg hover:text-accent transition-colors">
+                          +92 314 2189730
+                        </a>
+                        <a href="tel:+12097795428" className="text-gray-900 font-bold text-lg hover:text-accent transition-colors">
+                          +1 209 779 5428
+                        </a>
+                      </div>
                     </div>
                   </div>
 

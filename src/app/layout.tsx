@@ -92,13 +92,22 @@ export default function RootLayout({
               name: "Vortix Tech",
               url: "https://vortixtech.com",
               logo: "https://vortixtech.com/logo.png",
-              contactPoint: {
-                "@type": "ContactPoint",
-                telephone: "+92 335 1283034",
-                contactType: "customer service",
-                email: "info@thevortixtech.com",
-                availableLanguage: ["English", "Urdu"],
-              },
+              contactPoint: [
+                {
+                  "@type": "ContactPoint",
+                  telephone: "+92 314 2189730",
+                  contactType: "customer service",
+                  email: "info@thevortixtech.com",
+                  availableLanguage: ["English", "Urdu"],
+                },
+                {
+                  "@type": "ContactPoint",
+                  telephone: "+1 209 779 5428",
+                  contactType: "customer service",
+                  email: "info@thevortixtech.com",
+                  availableLanguage: ["English"],
+                },
+              ],
               sameAs: [
                 "https://www.linkedin.com/company/vortixtech",
                 "https://www.upwork.com/agencies/2094139614727200625/",
@@ -134,7 +143,21 @@ export default function RootLayout({
               name: "Vortix Tech",
               image: "https://vortixtech.com/logo.png",
               url: "https://vortixtech.com",
-              telephone: "+92 335 1283034",
+              telephone: "+92 314 2189730",
+              contactPoint: [
+                {
+                  "@type": "ContactPoint",
+                  telephone: "+92 314 2189730",
+                  contactType: "customer service",
+                  availableLanguage: ["English", "Urdu"],
+                },
+                {
+                  "@type": "ContactPoint",
+                  telephone: "+1 209 779 5428",
+                  contactType: "customer service",
+                  availableLanguage: ["English"],
+                },
+              ],
               address: {
                 "@type": "PostalAddress",
                 addressLocality: "Karachi",
