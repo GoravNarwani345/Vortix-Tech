@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send } from "lucide-react";
 import { useContactModal } from "./ContactModalContext";
+import PhoneInputWithCountry from "@/components/ui/PhoneInputWithCountry";
 import toast from "react-hot-toast";
 
 export default function ContactModal() {
@@ -16,6 +17,7 @@ export default function ContactModal() {
     service: "",
     message: "",
   });
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
 
   // Prevent scroll when open
   useEffect(() => {
@@ -31,8 +33,25 @@ export default function ContactModal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
+    // Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (formData.phone && !isPhoneValid) {
+      toast.error("Please enter a valid phone number (7-15 digits).");
+      return;
+    }
+
+    if (formData.message.trim().length < 10) {
+      toast.error("Please provide at least a short description of your project (min 10 characters).");
+      return;
+    }
+
+    setIsSubmitting(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
 
@@ -125,14 +144,14 @@ export default function ContactModal() {
 
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Phone</label>
-                    <input
-                      type="tel"
-                      name="phone"
+                    <label className="text-sm font-medium text-gray-700">Phone Number (Optional)</label>
+                    <PhoneInputWithCountry
                       value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none transition-all text-gray-900 placeholder:text-gray-400"
-                      placeholder="+1 (555) 000-0000"
+                      onChange={(fullNumber, isValid) => {
+                        setFormData((prev) => ({ ...prev, phone: fullNumber }));
+                        setIsPhoneValid(isValid);
+                      }}
+                      placeholder="(555) 000-0000"
                     />
                   </div>
                   <div className="space-y-2">

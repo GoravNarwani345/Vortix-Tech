@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { isAuthenticated } from "@/lib/auth";
+import { syncAiKnowledge } from "@/lib/aiKnowledge";
 
 export async function GET(
   req: Request,
@@ -55,6 +56,10 @@ export async function PATCH(
         ...(isPublished !== undefined ? { isPublished } : {}),
       },
     });
+
+    // Auto-update AI knowledge base immediately with the updated project
+    void syncAiKnowledge("manual");
+
     return NextResponse.json({ success: true, data: project }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -78,6 +83,10 @@ export async function DELETE(
 
   try {
     await prisma.project.delete({ where: { id } });
+
+    // Auto-update AI knowledge base immediately
+    void syncAiKnowledge("manual");
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     return NextResponse.json(

@@ -41,6 +41,10 @@ export default function Navbar() {
     };
   }, [isMobileOpen]);
 
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <>
       <nav

@@ -7,6 +7,7 @@ import {
   SESSION_MAX_AGE_SECONDS,
 } from "@/lib/session";
 import { getClientIp, rateLimit } from "@/lib/rateLimit";
+import { getSetting } from "@/lib/settings";
 
 export async function POST(req: Request) {
   try {
@@ -21,8 +22,10 @@ export async function POST(req: Request) {
 
     const { email, password } = await req.json();
 
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminEmail =
+      (await getSetting("ADMIN_EMAIL")) || process.env.ADMIN_EMAIL;
+    const adminPassword =
+      (await getSetting("ADMIN_PASSWORD")) || process.env.ADMIN_PASSWORD;
 
     if (!adminEmail || !adminPassword) {
       return NextResponse.json(

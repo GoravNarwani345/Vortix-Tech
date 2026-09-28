@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import ChatWidget from "@/components/chat/ChatWidget";
+import PublicShell from "@/components/layout/PublicShell";
 import { Toaster } from "react-hot-toast";
 import { ContactModalProvider } from "@/components/layout/ContactModalContext";
-import ContactModal from "@/components/layout/ContactModal";
-import CookieConsent from "@/components/layout/CookieConsent";
 import MicrosoftClarity from "@/components/layout/MicrosoftClarity";
 
 const inter = Inter({
@@ -181,12 +177,7 @@ export default function RootLayout({
               },
             }}
           />
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <ChatWidget />
-          <ContactModal />
-          <CookieConsent />
+          <PublicShell>{children}</PublicShell>
           <MicrosoftClarity />
         </ContactModalProvider>
       </body>

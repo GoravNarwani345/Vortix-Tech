@@ -3,21 +3,40 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
+import PhoneInputWithCountry from "@/components/ui/PhoneInputWithCountry";
 import toast from "react-hot-toast";
 
 export default function ContactContent() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     subject: "",
     message: "",
   });
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (formData.phone && !isPhoneValid) {
+      toast.error("Please enter a valid phone number (7-15 digits).");
+      return;
+    }
+
+    if (formData.message.trim().length < 10) {
+      toast.error("Please provide at least a brief description of your project (min 10 characters).");
+      return;
+    }
+
+    setIsSubmitting(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
 
@@ -28,6 +47,7 @@ export default function ContactContent() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           service: formData.subject,
           message: formData.message,
         }),
@@ -37,7 +57,7 @@ export default function ContactContent() {
       if (!res.ok) throw new Error("Failed to submit");
       
       toast.success("Thank you! Your message has been sent successfully.");
-      setFormData({ name: "", email: "", subject: "", message: "" });
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong. Please try again.");
@@ -203,25 +223,40 @@ export default function ContactContent() {
                   </div>
                 </div>
 
-                {/* Service Selection */}
-                <div className="flex flex-col gap-2 mb-8">
-                  <label htmlFor="subject" className="text-sm font-semibold text-gray-700">Interested Service</label>
-                  <select
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none transition-all text-gray-900 appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled className="text-gray-400">Select a service</option>
-                    <option value="web">Web Application</option>
-                    <option value="mobile">Mobile App</option>
-                    <option value="ai">AI / LLM Integration</option>
-                    <option value="n8n">n8n Automation</option>
-                    <option value="comfyui">ComfyUI Workflow</option>
-                    <option value="other">Other</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
+                  {/* Phone Input with Country Code */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-gray-700">Phone Number (Optional)</label>
+                    <PhoneInputWithCountry
+                      value={formData.phone}
+                      onChange={(fullNumber, isValid) => {
+                        setFormData((prev) => ({ ...prev, phone: fullNumber }));
+                        setIsPhoneValid(isValid);
+                      }}
+                      placeholder="(555) 000-0000"
+                    />
+                  </div>
+
+                  {/* Service Selection */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="subject" className="text-sm font-semibold text-gray-700">Interested Service *</label>
+                    <select
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none transition-all text-gray-900 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled className="text-gray-400">Select a service</option>
+                      <option value="Web App">Web Application</option>
+                      <option value="Mobile App">Mobile App</option>
+                      <option value="AI / LLM">AI & LLM Integration</option>
+                      <option value="n8n Automation">n8n Automation</option>
+                      <option value="ComfyUI">ComfyUI Workflow</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Message */}

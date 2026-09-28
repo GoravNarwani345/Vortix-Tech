@@ -11,16 +11,19 @@ import {
   X,
   FileText,
   Star,
+  Briefcase,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoMark from "@/components/layout/LogoMark";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Portfolio", href: "/admin/portfolio", icon: LayoutDashboard },
+  { name: "Portfolio", href: "/admin/portfolio", icon: Briefcase },
   { name: "Blog", href: "/admin/blog", icon: FileText },
   { name: "Testimonials", href: "/admin/testimonials", icon: Star },
   { name: "Feedback", href: "/admin/feedback", icon: MessageSquare },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({
@@ -59,7 +62,10 @@ export default function AdminLayout({
         <div className="flex-1 py-6 px-4 flex flex-col gap-2">
           {sidebarLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+            const isActive =
+              link.href === "/admin"
+                ? pathname === "/admin"
+                : pathname === link.href || pathname.startsWith(link.href + "/");
             return (
               <Link
                 key={link.name}
@@ -109,7 +115,10 @@ export default function AdminLayout({
           <div className="flex-1 py-6 px-4 flex flex-col gap-2">
             {sidebarLinks.map((link) => {
               const Icon = link.icon;
-              const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+              const isActive =
+                link.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
               return (
                 <Link
                   key={link.name}

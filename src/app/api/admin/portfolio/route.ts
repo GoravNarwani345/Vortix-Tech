@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { isAuthenticated } from "@/lib/auth";
+import { syncAiKnowledge } from "@/lib/aiKnowledge";
 
 export async function GET() {
   if (!(await isAuthenticated())) {
@@ -52,6 +53,9 @@ export async function POST(req: Request) {
         isPublished: isPublished ?? true,
       },
     });
+
+    // Auto-update AI knowledge base immediately with the new project
+    void syncAiKnowledge("manual");
 
     return NextResponse.json({ success: true, data: project }, { status: 201 });
   } catch (error) {

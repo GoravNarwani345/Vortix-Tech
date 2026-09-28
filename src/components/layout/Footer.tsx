@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { FaLinkedin, FaGithub, FaWhatsapp } from "react-icons/fa";
 import { FaUpwork } from "react-icons/fa6";
@@ -23,7 +24,12 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const pathname = usePathname();
   const { openModal } = useContactModal();
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <footer className="bg-[#FAF7F2] border-t border-gray-200 pt-20 pb-8">
