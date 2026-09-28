@@ -40,7 +40,7 @@ export async function GET() {
       contactEmail: effectiveContactEmail,
       cronSecretMasked: maskSecret(rawCronSecret),
       hasCronSecret: Boolean(rawCronSecret),
-      aiModel: stored.AI_MODEL || "gemini-2.5-flash",
+      aiModel: stored.AI_MODEL || "gemini-3.8-flash",
       aiTemperature: stored.AI_TEMPERATURE ?? 0.7,
       aiMaxTokens: stored.AI_MAX_TOKENS ?? 800,
       aiCustomInstructions: stored.AI_CUSTOM_INSTRUCTIONS || "",
