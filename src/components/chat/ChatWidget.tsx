@@ -12,7 +12,7 @@ type Message = {
 
 const WELCOME_MESSAGE: Message = {
   role: "model",
-  text: "Hi! 👋 I'm the Vortix Tech AI assistant. How can I help you today? Ask me about our services, pricing, or anything else!",
+  text: "Hi! I'm the Vortix Tech AI assistant. How can I help you today? Ask me about our services, pricing, or anything else!",
 };
 
 export default function ChatWidget() {

@@ -31,5 +31,42 @@ export default async function BlogPage() {
     // Database may not be available during build/runtime
   }
 
-  return <BlogContent posts={articles} />;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "Vortix Tech Engineering & AI Blog",
+    description: "Insights on web development, AI, automation, and tech trends from the Vortix Tech team.",
+    url: "https://vortixtech.com/blog",
+    publisher: {
+      "@type": "Organization",
+      name: "Vortix Tech",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://vortixtech.com/logo.png",
+      },
+    },
+    blogPost: articles.map((art) => ({
+      "@type": "BlogPosting",
+      headline: art.title,
+      description: art.excerpt,
+      url: `https://vortixtech.com/blog/${art.slug}`,
+      datePublished: art.createdAt.toISOString(),
+      dateModified: art.updatedAt.toISOString(),
+      image: art.image,
+      author: {
+        "@type": "Organization",
+        name: art.author || "Vortix Tech",
+      },
+    })),
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <BlogContent posts={articles} />
+    </>
+  );
 }

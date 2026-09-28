@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Plus, X, Upload } from "lucide-react";
 import toast from "react-hot-toast";
+import ProjectSeoAuditCard from "@/components/admin/ProjectSeoAuditCard";
 
 export default function NewProjectPage() {
   const router = useRouter();
@@ -163,6 +164,20 @@ export default function NewProjectPage() {
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
               placeholder="e.g. Next.js, React Native, Tailwind CSS"
+            />
+          </div>
+
+          {/* AI SEO Audit & Keyword Suggestion */}
+          <div className="mb-6">
+            <ProjectSeoAuditCard
+              title={formData.title}
+              category={formData.category}
+              description={formData.description}
+              tags={formData.tags}
+              liveUrl={formData.liveUrl}
+              githubUrl={formData.githubUrl}
+              onApplyTags={(newTags) => setFormData((prev) => ({ ...prev, tags: newTags }))}
+              onApplyTitle={(newTitle) => setFormData((prev) => ({ ...prev, title: newTitle }))}
             />
           </div>
 

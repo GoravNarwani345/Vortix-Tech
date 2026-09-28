@@ -31,5 +31,37 @@ export default async function PortfolioPage() {
     // Database may not be available during build/runtime
   }
 
-  return <PortfolioContent projects={dbProjects} />;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Portfolio | Vortix Tech",
+    description: "Case studies of web apps, mobile apps, AI automations, and digital platforms built by Vortix Tech.",
+    url: "https://vortixtech.com/portfolio",
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: dbProjects.map((project, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "CreativeWork",
+          name: project.title,
+          description: project.description,
+          keywords: project.tags,
+          genre: project.category,
+          url: project.liveUrl || "https://vortixtech.com/portfolio",
+          image: project.images[0] || undefined,
+        },
+      })),
+    },
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <PortfolioContent projects={dbProjects} />
+    </>
+  );
 }

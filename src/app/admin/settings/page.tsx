@@ -26,8 +26,10 @@ import {
   Gift,
   DollarSign,
   Gauge,
+  Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { cn } from "@/lib/utils";
 import {
   AI_MODELS,
   FREE_AI_MODELS,
@@ -311,7 +313,7 @@ export default function AdminSettingsPage() {
     : "https://vortixtech.com/api/cron/sync-ai-knowledge";
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -704,57 +706,59 @@ export default function AdminSettingsPage() {
 
                   {/* Model Selection with Categories (Free vs Paid) */}
                   <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                          Active Model & Tier
-                        </label>
-                        <p className="text-xs text-foreground-muted mt-0.5">
-                          Select from 100% Free Google AI Studio models ($0) or High-Capacity Paid/Pro models
-                        </p>
-                      </div>
-
-                      {/* Tier Filter Tabs */}
-                      <div className="flex items-center gap-1 p-1 bg-background border border-card-border rounded-xl text-xs self-start sm:self-auto">
-                        <button
-                          type="button"
-                          onClick={() => setModelTierFilter("all")}
-                          className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                            modelTierFilter === "all"
-                              ? "bg-card-bg text-foreground shadow-sm border border-card-border"
-                              : "text-foreground-muted hover:text-foreground"
-                          }`}
-                        >
-                          All ({AI_MODELS.length})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModelTierFilter("free")}
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all ${
-                            modelTierFilter === "free"
-                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold"
-                              : "text-foreground-muted hover:text-foreground"
-                          }`}
-                        >
-                          <Gift size={12} className="text-emerald-400" />
-                          <span>Free Models ({FREE_AI_MODELS.length})</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModelTierFilter("paid")}
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all ${
-                            modelTierFilter === "paid"
-                              ? "bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold"
-                              : "text-foreground-muted hover:text-foreground"
-                          }`}
-                        >
-                          <DollarSign size={12} className="text-purple-400" />
-                          <span>Paid Models ({PAID_AI_MODELS.length})</span>
-                        </button>
-                      </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-1">
+                        Active AI Model & Tier
+                      </label>
+                      <p className="text-xs text-foreground-muted">
+                        Select from 100% Free Google AI Studio models ($0) or High-Capacity Paid/Pro models.
+                      </p>
                     </div>
 
-                    {/* Quick Dropdown with optgroups */}
+                    {/* Filter Category Pills with Lucide Icons */}
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-background border border-card-border rounded-xl text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setModelTierFilter("all")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all",
+                          modelTierFilter === "all"
+                            ? "bg-card-bg text-foreground shadow-sm border border-card-border font-semibold"
+                            : "text-foreground-muted hover:text-foreground"
+                        )}
+                      >
+                        <Layers size={13} />
+                        <span>All Models ({AI_MODELS.length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModelTierFilter("free")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all",
+                          modelTierFilter === "free"
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold"
+                            : "text-foreground-muted hover:text-foreground"
+                        )}
+                      >
+                        <Gift size={13} className="text-emerald-400" />
+                        <span>Free Models ({FREE_AI_MODELS.length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModelTierFilter("paid")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all",
+                          modelTierFilter === "paid"
+                            ? "bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold"
+                            : "text-foreground-muted hover:text-foreground"
+                        )}
+                      >
+                        <DollarSign size={13} className="text-purple-400" />
+                        <span>Paid Models ({PAID_AI_MODELS.length})</span>
+                      </button>
+                    </div>
+
+                    {/* Dropdown with optgroups (100% Emoji-free) */}
                     <div>
                       <select
                         value={aiModel}
@@ -766,23 +770,23 @@ export default function AdminSettingsPage() {
                             setAiModel(e.target.value);
                           }
                         }}
-                        className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                        className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
                       >
-                        <optgroup label="🟢 FREE TIER MODELS (Google AI Studio - $0.00 / 1,500 RPD)">
+                        <optgroup label="[FREE TIER] Google AI Studio - $0.00 / 1,500 RPD">
                           {FREE_AI_MODELS.map((m) => (
                             <option key={m.id} value={m.id}>
-                              {m.name} — {m.speed} [{m.rateLimits}] {m.recommended ? "★ RECOMMENDED" : ""}
+                              {m.name} — {m.speed} [{m.rateLimits}] {m.recommended ? "(Default / Recommended)" : ""}
                             </option>
                           ))}
                         </optgroup>
-                        <optgroup label="🟣 PAID / PRO TIER MODELS (Pay-As-You-Go / Cloud Billing)">
+                        <optgroup label="[PAID / PRO TIER] Pay-As-You-Go / Cloud Billing">
                           {PAID_AI_MODELS.map((m) => (
                             <option key={m.id} value={m.id}>
                               {m.name} — {m.contextWindow} [{m.cost}]
                             </option>
                           ))}
                         </optgroup>
-                        <optgroup label="⚙️ Custom Model">
+                        <optgroup label="Custom Integration">
                           <option value="__custom__">+ Enter Custom Gemini Model ID...</option>
                         </optgroup>
                       </select>
@@ -803,18 +807,18 @@ export default function AdminSettingsPage() {
                           onClick={() => {
                             if (customModelInput.trim()) {
                               setAiModel(customModelInput.trim());
-                              toast.success(`Selected custom model: ${customModelInput.trim()}`);
+                              toast.success(`Active model set to: ${customModelInput.trim()}`);
                             }
                           }}
-                          className="px-3 py-1.5 bg-accent text-accent-foreground text-xs font-semibold rounded-lg hover:opacity-90"
+                          className="px-3 py-1.5 bg-accent text-accent-foreground text-xs font-semibold rounded-lg hover:opacity-90 transition-all"
                         >
-                          Apply Model ID
+                          Apply ID
                         </button>
                       </div>
                     )}
 
-                    {/* Interactive Model Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                    {/* Interactive Model Cards Grid (Responsive 1-col on mobile, 2-col on tablet/desktop) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                       {AI_MODELS.filter((m) => {
                         if (modelTierFilter === "free") return m.tier === "free";
                         if (modelTierFilter === "paid") return m.tier === "paid";
@@ -829,62 +833,74 @@ export default function AdminSettingsPage() {
                               setAiModel(m.id);
                               setShowCustomModel(false);
                             }}
-                            className={`group relative p-4 rounded-xl border text-left cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                            className={cn(
+                              "group relative p-3.5 rounded-xl border text-left cursor-pointer transition-all duration-200 flex flex-col justify-between",
                               isSelected
                                 ? "bg-accent/10 border-accent shadow-md shadow-accent/10 ring-1 ring-accent"
                                 : "bg-card-bg/60 border-card-border hover:border-accent/40 hover:bg-card-bg"
-                            }`}
+                            )}
                           >
                             <div>
-                              <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex items-start justify-between gap-1.5 mb-2">
                                 <span
-                                  className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                                  className={cn(
+                                    "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md",
                                     isFree
                                       ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                                       : "bg-purple-500/15 text-purple-400 border border-purple-500/30"
-                                  }`}
+                                  )}
                                 >
                                   {isFree ? <Gift size={11} /> : <DollarSign size={11} />}
                                   {m.badge}
                                 </span>
 
                                 {m.recommended && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
-                                    ★ DEFAULT
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
+                                    <Star size={10} className="fill-accent" />
+                                    DEFAULT
                                   </span>
                                 )}
                               </div>
 
                               <div className="flex items-center justify-between mb-0.5">
-                                <h4 className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors">
+                                <h4 className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors truncate">
                                   {m.name}
                                 </h4>
                                 {isSelected && (
-                                  <CheckCircle2 size={16} className="text-accent flex-shrink-0" />
+                                  <CheckCircle2 size={16} className="text-accent flex-shrink-0 ml-1" />
                                 )}
                               </div>
 
-                              <p className="text-[11px] font-mono text-foreground-muted mb-2">
+                              <p className="text-[11px] font-mono text-foreground-muted mb-2 truncate">
                                 {m.id}
                               </p>
 
-                              <p className="text-xs text-foreground-muted line-clamp-2 mb-3">
+                              <p className="text-xs text-foreground-muted line-clamp-2 mb-3 leading-relaxed">
                                 {m.description}
                               </p>
                             </div>
 
                             <div className="space-y-1.5 pt-2 border-t border-card-border/60 text-[11px]">
                               <div className="flex items-center justify-between text-foreground-muted">
-                                <span>Speed:</span>
+                                <span className="flex items-center gap-1">
+                                  <Zap size={11} className="text-amber-400" />
+                                  Speed:
+                                </span>
                                 <span className="font-medium text-foreground">{m.speed}</span>
                               </div>
                               <div className="flex items-center justify-between text-foreground-muted">
-                                <span>Quota:</span>
-                                <span className="font-medium text-foreground truncate ml-2">{m.rateLimits}</span>
+                                <span className="flex items-center gap-1">
+                                  <Gauge size={11} className="text-blue-400" />
+                                  Quota:
+                                </span>
+                                <span className="font-medium text-foreground truncate ml-1">{m.rateLimits}</span>
                               </div>
                               <div className="flex items-center justify-between text-foreground-muted">
-                                <span>Cost:</span>
-                                <span className={`font-semibold ${isFree ? "text-emerald-400" : "text-purple-400"}`}>
+                                <span className="flex items-center gap-1">
+                                  <Sparkles size={11} className={isFree ? "text-emerald-400" : "text-purple-400"} />
+                                  Cost:
+                                </span>
+                                <span className={cn("font-semibold", isFree ? "text-emerald-400" : "text-purple-400")}>
                                   {isFree ? "$0.00 (Free)" : "Paid / Pro"}
                                 </span>
                               </div>
@@ -901,20 +917,22 @@ export default function AdminSettingsPage() {
                       return (
                         <div className="p-3.5 rounded-xl bg-card-bg border border-card-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
                           <div className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full ${isFree ? "bg-emerald-400 animate-pulse" : "bg-purple-400"}`} />
+                            <span className={cn("w-2.5 h-2.5 rounded-full", isFree ? "bg-emerald-400 animate-pulse" : "bg-purple-400")} />
                             <span className="text-foreground-muted">Active Model:</span>
                             <span className="font-semibold font-mono text-accent">{aiModel}</span>
                             <span
-                              className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold",
                                 isFree
                                   ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                                   : "bg-purple-500/15 text-purple-400 border border-purple-500/30"
-                              }`}
+                              )}
                             >
-                              {isFree ? "🟢 Free Tier ($0/mo)" : "🟣 Paid / Pro Tier"}
+                              {isFree ? <Gift size={10} /> : <DollarSign size={10} />}
+                              {isFree ? "Free Tier ($0/mo)" : "Paid / Pro Tier"}
                             </span>
                           </div>
-                          <span className="text-foreground-muted text-[11px]">
+                          <span className="text-foreground-muted text-[11px] truncate">
                             {currentModel.rateLimits} • {currentModel.speed}
                           </span>
                         </div>

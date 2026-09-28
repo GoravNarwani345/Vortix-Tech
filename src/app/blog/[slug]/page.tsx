@@ -22,7 +22,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: article.title,
     description: article.excerpt,
-    keywords: [article.category, "Vortix Tech blog", "tech article"],
+    keywords: Array.from(
+      new Set([
+        article.category,
+        ...article.title.toLowerCase().split(/\s+/).filter((w) => w.length > 3),
+        article.slug.replace(/-/g, " "),
+        "Vortix Tech engineering",
+        "tech insights",
+      ])
+    ),
     alternates: {
       canonical: `/blog/${article.slug}`,
     },
