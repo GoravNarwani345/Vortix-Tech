@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const configuredModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
+    const configuredModel = (await getSetting("AI_MODEL")) || "gemini-3.6-flash";
     const temperature = (await getSetting("AI_TEMPERATURE")) ?? 0.7;
     const maxTokens = (await getSetting("AI_MAX_TOKENS")) ?? 800;
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     // Candidates to try in order if the configured model is unavailable or overloaded
     const candidateModels = Array.from(
-      new Set([configuredModel, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.8-flash", "gemini-2.0-flash-lite"])
+      new Set([configuredModel, "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"])
     );
 
     let reply: string | null = null;

@@ -15,17 +15,17 @@ describe("AI Models Catalog", () => {
   });
 
   it("should correctly identify free tier models", () => {
+    expect(isFreeModel("gemini-3.6-flash")).toBe(true);
+    expect(isFreeModel("gemini-3.5-flash-lite")).toBe(true);
+    expect(isFreeModel("gemini-3.5-flash")).toBe(true);
     expect(isFreeModel("gemini-3.8-flash")).toBe(true);
-    expect(isFreeModel("gemini-2.0-flash")).toBe(true);
-    expect(isFreeModel("gemini-1.5-flash")).toBe(true);
-    expect(isFreeModel("gemini-1.5-flash-8b")).toBe(true);
-    expect(isFreeModel("gemini-2.0-flash-lite")).toBe(true);
   });
 
   it("should correctly identify paid / pro models", () => {
-    expect(isFreeModel("gemini-2.5-pro")).toBe(false);
+    expect(isFreeModel("gemini-3.1-pro-preview")).toBe(false);
     expect(isFreeModel("gemini-1.5-pro")).toBe(false);
     expect(isFreeModel("gemini-3.1-pro")).toBe(false);
+    expect(isFreeModel("gemini-3.7-flash")).toBe(false);
   });
 
   it("should provide complete specifications for each model", () => {
