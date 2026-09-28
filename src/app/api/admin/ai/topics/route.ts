@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getSetting } from "@/lib/settings";
 
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
@@ -7,10 +8,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("Gemini API key is not configured.");
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const aiModel = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
     
     const prompt = `You are a tech blog content strategist. Suggest 5 highly engaging, trending, and fun topics for a technology agency blog (Vortix Tech). 
     Topics should be related to: Web Development, AI Agents, ComfyUI, LLMs, Next.js, React Native, or Automation.

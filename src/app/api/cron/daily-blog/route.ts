@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { constantTimeEqual } from "@/lib/session";
+import { getSetting } from "@/lib/settings";
 
 // This should be triggered by a Cron service (like Vercel Cron or GitHub Actions)
 export async function GET(req: Request) {
   try {
     // 1. Required Security Check
-    const cronSecret = process.env.CRON_SECRET;
+    const cronSecret = (await getSetting("CRON_SECRET")) || process.env.CRON_SECRET;
     if (!cronSecret) {
       return NextResponse.json(
         { error: "CRON_SECRET is not configured" },
@@ -27,11 +28,13 @@ export async function GET(req: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("Gemini API key is missing");
 
+    const aiModel = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+
     // 2. Fetch a Trending Topic
-    const topicEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const topicEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
     const topicPrompt = `You are an AI trend analyzer. Suggest EXACTLY ONE highly engaging, trending, and fun topic for a technology agency blog (Vortix Tech) based on today's tech news. Focus on AI, web development, or automation. Return ONLY the topic string, no quotes.`;
     
     const topicResponse = await fetch(topicEndpoint, {

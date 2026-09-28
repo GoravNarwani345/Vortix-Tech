@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react";
+import { isFreeModel } from "@/lib/aiModels";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -302,8 +303,17 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-blue-200 leading-relaxed">
                   Every project, blog post, and service you add is compiled into the AI knowledge base. It responds accurately to visitor questions on the public website.
                 </p>
-                <div className="flex flex-wrap gap-4 text-xs text-blue-300 pt-1">
-                  <span>Model: <strong>{data?.stats.aiKnowledge.model || "gemini-2.5-flash"}</strong></span>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-blue-300 pt-1">
+                  <span className="flex items-center gap-1.5">
+                    Model: <strong className="text-white font-mono">{data?.stats.aiKnowledge.model || "gemini-2.5-flash"}</strong>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
+                      isFreeModel(data?.stats.aiKnowledge.model || "gemini-2.5-flash")
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                    }`}>
+                      {isFreeModel(data?.stats.aiKnowledge.model || "gemini-2.5-flash") ? "FREE TIER" : "PAID TIER"}
+                    </span>
+                  </span>
                   <span>•</span>
                   <span>
                     Last Synced:{" "}

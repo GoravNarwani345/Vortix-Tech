@@ -23,8 +23,18 @@ import {
   Sliders,
   Mail,
   Zap,
+  Gift,
+  DollarSign,
+  Gauge,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import {
+  AI_MODELS,
+  FREE_AI_MODELS,
+  PAID_AI_MODELS,
+  getModelById,
+  isFreeModel,
+} from "@/lib/aiModels";
 
 type SettingsData = {
   adminEmail: string;
@@ -106,6 +116,9 @@ export default function AdminSettingsPage() {
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [geminiMasked, setGeminiMasked] = useState("");
   const [aiModel, setAiModel] = useState("gemini-2.5-flash");
+  const [modelTierFilter, setModelTierFilter] = useState<"all" | "free" | "paid">("all");
+  const [showCustomModel, setShowCustomModel] = useState(false);
+  const [customModelInput, setCustomModelInput] = useState("");
   const [aiTemperature, setAiTemperature] = useState(0.7);
   const [aiMaxTokens, setAiMaxTokens] = useState(800);
   const [aiCustomInstructions, setAiCustomInstructions] = useState("");
@@ -410,8 +423,19 @@ export default function AdminSettingsPage() {
                     <span className="text-xs font-semibold uppercase tracking-wider">Active Model</span>
                     <Bot size={18} className="text-purple-500" />
                   </div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {auditData?.model || "gemini-2.5-flash"}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl font-bold text-foreground">
+                      {auditData?.model || "gemini-2.5-flash"}
+                    </span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        isFreeModel(auditData?.model || "")
+                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                          : "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                      }`}
+                    >
+                      {isFreeModel(auditData?.model || "") ? "FREE TIER" : "PAID TIER"}
+                    </span>
                   </div>
                   <p className="text-xs text-foreground-muted mt-1">
                     Temp: {auditData?.temperature} | Max: {auditData?.maxTokens} tokens
@@ -678,19 +702,224 @@ export default function AdminSettingsPage() {
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
-                      Active Model
-                    </label>
-                    <select
-                      value={aiModel}
-                      onChange={(e) => setAiModel(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
-                    >
-                      <option value="gemini-2.5-flash">gemini-2.5-flash (Ultra-fast, lowest latency, recommended)</option>
-                      <option value="gemini-1.5-pro">gemini-1.5-pro (Deep reasoning & extended logic)</option>
-                      <option value="gemini-1.5-flash">gemini-1.5-flash (Legacy fast)</option>
-                    </select>
+                  {/* Model Selection with Categories (Free vs Paid) */}
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                          Active Model & Tier
+                        </label>
+                        <p className="text-xs text-foreground-muted mt-0.5">
+                          Select from 100% Free Google AI Studio models ($0) or High-Capacity Paid/Pro models
+                        </p>
+                      </div>
+
+                      {/* Tier Filter Tabs */}
+                      <div className="flex items-center gap-1 p-1 bg-background border border-card-border rounded-xl text-xs self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => setModelTierFilter("all")}
+                          className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                            modelTierFilter === "all"
+                              ? "bg-card-bg text-foreground shadow-sm border border-card-border"
+                              : "text-foreground-muted hover:text-foreground"
+                          }`}
+                        >
+                          All ({AI_MODELS.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModelTierFilter("free")}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all ${
+                            modelTierFilter === "free"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold"
+                              : "text-foreground-muted hover:text-foreground"
+                          }`}
+                        >
+                          <Gift size={12} className="text-emerald-400" />
+                          <span>Free Models ({FREE_AI_MODELS.length})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModelTierFilter("paid")}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all ${
+                            modelTierFilter === "paid"
+                              ? "bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold"
+                              : "text-foreground-muted hover:text-foreground"
+                          }`}
+                        >
+                          <DollarSign size={12} className="text-purple-400" />
+                          <span>Paid Models ({PAID_AI_MODELS.length})</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quick Dropdown with optgroups */}
+                    <div>
+                      <select
+                        value={aiModel}
+                        onChange={(e) => {
+                          if (e.target.value === "__custom__") {
+                            setShowCustomModel(true);
+                          } else {
+                            setShowCustomModel(false);
+                            setAiModel(e.target.value);
+                          }
+                        }}
+                        className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                      >
+                        <optgroup label="🟢 FREE TIER MODELS (Google AI Studio - $0.00 / 1,500 RPD)">
+                          {FREE_AI_MODELS.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} — {m.speed} [{m.rateLimits}] {m.recommended ? "★ RECOMMENDED" : ""}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="🟣 PAID / PRO TIER MODELS (Pay-As-You-Go / Cloud Billing)">
+                          {PAID_AI_MODELS.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} — {m.contextWindow} [{m.cost}]
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="⚙️ Custom Model">
+                          <option value="__custom__">+ Enter Custom Gemini Model ID...</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Custom Model Input if triggered */}
+                    {showCustomModel && (
+                      <div className="flex gap-2 p-3 rounded-xl bg-background border border-card-border">
+                        <input
+                          type="text"
+                          placeholder="e.g. gemini-2.0-flash-exp"
+                          value={customModelInput}
+                          onChange={(e) => setCustomModelInput(e.target.value)}
+                          className="flex-1 px-3 py-1.5 bg-card-bg border border-card-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customModelInput.trim()) {
+                              setAiModel(customModelInput.trim());
+                              toast.success(`Selected custom model: ${customModelInput.trim()}`);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-accent text-accent-foreground text-xs font-semibold rounded-lg hover:opacity-90"
+                        >
+                          Apply Model ID
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Interactive Model Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                      {AI_MODELS.filter((m) => {
+                        if (modelTierFilter === "free") return m.tier === "free";
+                        if (modelTierFilter === "paid") return m.tier === "paid";
+                        return true;
+                      }).map((m) => {
+                        const isSelected = aiModel === m.id;
+                        const isFree = m.tier === "free";
+                        return (
+                          <div
+                            key={m.id}
+                            onClick={() => {
+                              setAiModel(m.id);
+                              setShowCustomModel(false);
+                            }}
+                            className={`group relative p-4 rounded-xl border text-left cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                              isSelected
+                                ? "bg-accent/10 border-accent shadow-md shadow-accent/10 ring-1 ring-accent"
+                                : "bg-card-bg/60 border-card-border hover:border-accent/40 hover:bg-card-bg"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                                    isFree
+                                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                      : "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                                  }`}
+                                >
+                                  {isFree ? <Gift size={11} /> : <DollarSign size={11} />}
+                                  {m.badge}
+                                </span>
+
+                                {m.recommended && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
+                                    ★ DEFAULT
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between mb-0.5">
+                                <h4 className="font-semibold text-sm text-foreground group-hover:text-accent transition-colors">
+                                  {m.name}
+                                </h4>
+                                {isSelected && (
+                                  <CheckCircle2 size={16} className="text-accent flex-shrink-0" />
+                                )}
+                              </div>
+
+                              <p className="text-[11px] font-mono text-foreground-muted mb-2">
+                                {m.id}
+                              </p>
+
+                              <p className="text-xs text-foreground-muted line-clamp-2 mb-3">
+                                {m.description}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1.5 pt-2 border-t border-card-border/60 text-[11px]">
+                              <div className="flex items-center justify-between text-foreground-muted">
+                                <span>Speed:</span>
+                                <span className="font-medium text-foreground">{m.speed}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-foreground-muted">
+                                <span>Quota:</span>
+                                <span className="font-medium text-foreground truncate ml-2">{m.rateLimits}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-foreground-muted">
+                                <span>Cost:</span>
+                                <span className={`font-semibold ${isFree ? "text-emerald-400" : "text-purple-400"}`}>
+                                  {isFree ? "$0.00 (Free)" : "Paid / Pro"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Active Model Indicator Summary */}
+                    {(() => {
+                      const currentModel = getModelById(aiModel);
+                      const isFree = currentModel.tier === "free";
+                      return (
+                        <div className="p-3.5 rounded-xl bg-card-bg border border-card-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2.5 h-2.5 rounded-full ${isFree ? "bg-emerald-400 animate-pulse" : "bg-purple-400"}`} />
+                            <span className="text-foreground-muted">Active Model:</span>
+                            <span className="font-semibold font-mono text-accent">{aiModel}</span>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                                isFree
+                                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                              }`}
+                            >
+                              {isFree ? "🟢 Free Tier ($0/mo)" : "🟣 Paid / Pro Tier"}
+                            </span>
+                          </div>
+                          <span className="text-foreground-muted text-[11px]">
+                            {currentModel.rateLimits} • {currentModel.speed}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
