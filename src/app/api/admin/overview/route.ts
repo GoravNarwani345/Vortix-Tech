@@ -104,14 +104,14 @@ export async function GET() {
       lastSyncedAt: null as string | null,
       totalChars: 0,
       estimatedTokens: 0,
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       hasApiKey: false,
     };
 
     try {
       const audit = await getAiKnowledgeAudit();
       const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
-      const model = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+      const model = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
       aiStats = {
         lastSyncedAt: audit.lastSyncedAt || null,
         totalChars: audit.totalChars || 0,

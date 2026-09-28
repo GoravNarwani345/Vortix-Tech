@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
     const temperature = (await getSetting("AI_TEMPERATURE")) ?? 0.7;
     const maxTokens = (await getSetting("AI_MAX_TOKENS")) ?? 800;
 

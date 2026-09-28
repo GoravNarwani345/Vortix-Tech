@@ -117,7 +117,7 @@ export default function AdminSettingsPage() {
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [geminiMasked, setGeminiMasked] = useState("");
-  const [aiModel, setAiModel] = useState("gemini-2.5-flash");
+  const [aiModel, setAiModel] = useState("gemini-3.8-flash");
   const [modelTierFilter, setModelTierFilter] = useState<"all" | "free" | "paid">("all");
   const [showCustomModel, setShowCustomModel] = useState(false);
   const [customModelInput, setCustomModelInput] = useState("");
@@ -156,7 +156,7 @@ export default function AdminSettingsPage() {
         const s: SettingsData = data.settings;
         setAdminEmail(s.adminEmail || "");
         setGeminiMasked(s.geminiApiKeyMasked || "");
-        setAiModel(s.aiModel || "gemini-2.5-flash");
+        setAiModel(s.aiModel || "gemini-3.8-flash");
         setAiTemperature(s.aiTemperature ?? 0.7);
         setAiMaxTokens(s.aiMaxTokens ?? 800);
         setAiCustomInstructions(s.aiCustomInstructions || "");
@@ -427,7 +427,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xl sm:text-2xl font-bold text-foreground">
-                      {auditData?.model || "gemini-2.5-flash"}
+                      {auditData?.model || "gemini-3.8-flash"}
                     </span>
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${

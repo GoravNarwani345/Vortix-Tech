@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
 
     const prompt = `You are a world-class Technical SEO and Conversion Rate Optimization (CRO) expert for high-end web & AI agencies.
