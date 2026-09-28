@@ -153,9 +153,9 @@ export default function ContactContent() {
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm font-medium mb-1">Location</p>
-                      <p className="text-gray-900 font-bold text-lg leading-snug">
-                        Remote First Agency<br />
-                        Global Team
+                      <p className="text-gray-900 font-bold text-base leading-snug">
+                        21st Commercial, DHA Phase 2<br />
+                        Karachi, 75500, Pakistan
                       </p>
                     </div>
                   </div>

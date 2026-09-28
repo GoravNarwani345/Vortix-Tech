@@ -12,29 +12,81 @@ interface Testimonial {
   rating: number;
 }
 
+const DEFAULT_TESTIMONIALS: Testimonial[] = [
+  {
+    id: "t-1",
+    name: "Marcus R.",
+    role: "Startup Founder",
+    content:
+      "Really happy with how the project turned out. Communication was great throughout the process and they understood what I needed without me having to explain it five times.",
+    rating: 5,
+  },
+  {
+    id: "t-2",
+    name: "Ahmed K.",
+    role: "Operations Manager",
+    content:
+      "They built an automation system for our team and it's saving us hours every day. Honestly didn't think it would make that big of a difference but it did.",
+    rating: 5,
+  },
+  {
+    id: "t-3",
+    name: "Jordan P.",
+    role: "Business Owner",
+    content:
+      "Solid work. They delivered what was promised on time. Would use again.",
+    rating: 4,
+  },
+  {
+    id: "t-4",
+    name: "Sarah M.",
+    role: "Small Business Owner",
+    content:
+      "I'm not a tech person at all but they were patient and walked me through everything. My site looks professional and I can update it myself now.",
+    rating: 5,
+  },
+  {
+    id: "t-5",
+    name: "Lisa N.",
+    role: "Online Store Owner",
+    content:
+      "Good job overall. Took a bit longer than expected but the end result was worth the wait.",
+    rating: 4,
+  },
+  {
+    id: "t-6",
+    name: "Rachel K.",
+    role: "Tech Lead",
+    content:
+      "Good developers. Code was clean and well-organized which is rare honestly. Easy to work with.",
+    rating: 4,
+  },
+];
+
 export default function Testimonials({
   testimonials = [],
 }: {
   testimonials?: Testimonial[];
 }) {
   const { openModal } = useContactModal();
+  const displayList = testimonials && testimonials.length > 0 ? testimonials : DEFAULT_TESTIMONIALS;
 
   return (
     <section className="bg-background py-24 sm:py-32 overflow-hidden">
       <div className="container-custom">
         <div className="text-center mb-16">
-          <span className="text-accent text-sm font-bold uppercase tracking-widest">
-            Client Success
+          <span className="text-accent text-xs font-bold uppercase tracking-widest">
+            Client Reviews
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-bold text-gray-900 mt-4 mb-6">
-            Loved by our partners
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-3 mb-4">
+            What our clients say
           </h2>
-          <div className="w-20 h-1 bg-gray-900 mx-auto rounded-full" />
+          <div className="w-16 h-1 bg-accent/40 mx-auto rounded-full" />
         </div>
 
-        {testimonials.length > 0 ? (
+        {displayList.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, idx) => (
+            {displayList.map((testimonial, idx) => (
               <motion.div
                 key={testimonial.id}
                 initial={{ opacity: 0, y: 30 }}
