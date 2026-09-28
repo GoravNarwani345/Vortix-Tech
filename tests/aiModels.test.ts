@@ -15,10 +15,10 @@ describe("AI Models Catalog", () => {
   });
 
   it("should correctly identify free tier models", () => {
-    expect(isFreeModel("gemini-2.5-flash")).toBe(true);
+    expect(isFreeModel("gemini-3.8-flash")).toBe(true);
+    expect(isFreeModel("gemini-2.0-flash")).toBe(true);
     expect(isFreeModel("gemini-1.5-flash")).toBe(true);
     expect(isFreeModel("gemini-1.5-flash-8b")).toBe(true);
-    expect(isFreeModel("gemini-2.0-flash")).toBe(true);
     expect(isFreeModel("gemini-2.0-flash-lite")).toBe(true);
   });
 
@@ -41,8 +41,8 @@ describe("AI Models Catalog", () => {
   });
 
   it("should retrieve model by ID with fallback for custom model IDs", () => {
-    const defaultModel = getModelById("gemini-2.5-flash");
-    expect(defaultModel.name).toBe("Gemini 2.5 Flash");
+    const defaultModel = getModelById("gemini-3.8-flash");
+    expect(defaultModel.name).toBe("Gemini 3.8 Flash");
     expect(defaultModel.tier).toBe("free");
 
     const customModel = getModelById("gemini-custom-future-99");

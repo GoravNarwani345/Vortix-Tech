@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("Gemini API key is missing");
 
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
 
     // 2. Fetch a Trending Topic
     const topicEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;

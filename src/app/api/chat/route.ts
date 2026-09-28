@@ -60,42 +60,65 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-2.5-flash";
+    const configuredModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
     const temperature = (await getSetting("AI_TEMPERATURE")) ?? 0.7;
     const maxTokens = (await getSetting("AI_MAX_TOKENS")) ?? 800;
 
     // Use compiled and daily-synced overall website knowledge
     const knowledgeText = await getAiKnowledge();
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
-
     const systemInstruction = {
       parts: [{ text: knowledgeText }],
     };
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: systemInstruction,
-        contents,
-        generationConfig: { temperature, maxOutputTokens: maxTokens },
-      }),
-    });
+    // Candidates to try in order if the configured model is unavailable
+    const candidateModels = Array.from(
+      new Set([configuredModel, "gemini-3.8-flash", "gemini-2.0-flash", "gemini-1.5-flash"])
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API Error:", errorText);
-      return NextResponse.json(
-        { error: "Failed to generate response" },
-        { status: response.status }
-      );
+    let reply: string | null = null;
+    let lastStatus = 500;
+
+    for (const model of candidateModels) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: systemInstruction,
+            contents,
+            generationConfig: { temperature, maxOutputTokens: maxTokens },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          reply =
+            data.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "I'm sorry, I couldn't generate a response.";
+          break;
+        } else {
+          lastStatus = response.status;
+          const errorText = await response.text();
+          console.error(`Gemini API Error for model ${model}:`, errorText);
+          // If 404 (model not found/deprecated), try next candidate model
+          if (response.status === 404) {
+            continue;
+          }
+          break;
+        }
+      } catch (err) {
+        console.error(`Fetch error with model ${model}:`, err);
+      }
     }
 
-    const data = await response.json();
-    const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I'm sorry, I couldn't generate a response.";
+    if (!reply) {
+      return NextResponse.json(
+        { error: "Failed to generate AI response. Please try again." },
+        { status: lastStatus === 404 ? 502 : lastStatus }
+      );
+    }
 
     return NextResponse.json({ reply });
   } catch (error) {
