@@ -71,9 +71,9 @@ export async function POST(req: NextRequest) {
       parts: [{ text: knowledgeText }],
     };
 
-    // Candidates to try in order if the configured model is unavailable
+    // Candidates to try in order if the configured model is unavailable or overloaded
     const candidateModels = Array.from(
-      new Set([configuredModel, "gemini-3.8-flash", "gemini-2.0-flash", "gemini-1.5-flash"])
+      new Set([configuredModel, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.8-flash", "gemini-2.0-flash-lite"])
     );
 
     let reply: string | null = null;
@@ -101,11 +101,15 @@ export async function POST(req: NextRequest) {
         } else {
           lastStatus = response.status;
           const errorText = await response.text();
-          console.error(`Gemini API Error for model ${model}:`, errorText);
-          // If 404 (model not found/deprecated), try next candidate model
-          if (response.status === 404) {
+          console.error(`Gemini API Error for model ${model} (status ${response.status}):`, errorText);
+
+          // If 503 (high demand), 429 (rate limit), 404 (deprecated), or 5xx (Google internal error):
+          // Seamlessly failover to the next candidate model
+          if ([503, 429, 404, 500, 502, 504].includes(response.status)) {
             continue;
           }
+
+          // If 401 or 403 (invalid API key), stop retrying
           break;
         }
       } catch (err) {
