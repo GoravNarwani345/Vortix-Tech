@@ -2,11 +2,22 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 
-// Next.js 16 renamed "middleware" to "proxy".
-// This is an optimistic redirect only — every admin API route also enforces
-// its own session check, which is the actual authorization boundary.
+// Next.js 16 proxy / middleware
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Intercept malformed bot / scanner server action probes (e.g. Next-Action: "\"x\"")
+  const nextAction = request.headers.get("next-action");
+  if (nextAction) {
+    if (
+      nextAction.length < 16 ||
+      nextAction.includes('"') ||
+      nextAction.includes("'") ||
+      nextAction.includes("\\")
+    ) {
+      return new NextResponse("Invalid action reference", { status: 400 });
+    }
+  }
 
   // Protect /admin routes (except /admin/login)
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
@@ -23,5 +34,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+  ],
 };

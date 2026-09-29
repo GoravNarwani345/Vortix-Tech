@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { COUNTRIES as BASE_COUNTRIES } from "@/lib/countryCodes";
 
 export type CountryItem = {
   name: string;
@@ -7,34 +8,27 @@ export type CountryItem = {
   flag: string;
 };
 
-// Server-side in-memory cache
-let cachedCountries: CountryItem[] | null = null;
+// Reliable base country dataset with 30+ top countries
+const FALLBACK_COUNTRIES: CountryItem[] = BASE_COUNTRIES.map((c) => ({
+  name: c.name,
+  code: c.code,
+  dialCode: c.dialCode,
+  flag: c.flag,
+}));
+
+// Server-side in-memory cache initialized with fallback
+let cachedCountries: CountryItem[] = FALLBACK_COUNTRIES;
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // High-priority popular countries to display at top
 const POPULAR_CODES = ["US", "PK", "GB", "AE", "SA", "CA", "AU", "DE", "FR", "IN", "SG", "QA"];
 
-// Reliable fallback in case external network has issues
-const FALLBACK_COUNTRIES: CountryItem[] = [
-  { name: "United States", code: "US", dialCode: "+1", flag: "🇺🇸" },
-  { name: "Pakistan", code: "PK", dialCode: "+92", flag: "🇵🇰" },
-  { name: "United Kingdom", code: "GB", dialCode: "+44", flag: "🇬🇧" },
-  { name: "United Arab Emirates", code: "AE", dialCode: "+971", flag: "🇦🇪" },
-  { name: "Saudi Arabia", code: "SA", dialCode: "+966", flag: "🇸🇦" },
-  { name: "Canada", code: "CA", dialCode: "+1", flag: "🇨🇦" },
-  { name: "Australia", code: "AU", dialCode: "+61", flag: "🇦🇺" },
-  { name: "Germany", code: "DE", dialCode: "+49", flag: "🇩🇪" },
-  { name: "France", code: "FR", dialCode: "+33", flag: "🇫🇷" },
-  { name: "India", code: "IN", dialCode: "+91", flag: "🇮🇳" },
-  { name: "Singapore", code: "SG", dialCode: "+65", flag: "🇸🇬" },
-  { name: "Qatar", code: "QA", dialCode: "+974", flag: "🇶🇦" },
-];
-
 export async function GET() {
   const now = Date.now();
 
-  if (cachedCountries && now - lastFetchTime < CACHE_TTL_MS) {
+  // Return cached result if fresh and populated
+  if (cachedCountries.length > FALLBACK_COUNTRIES.length && now - lastFetchTime < CACHE_TTL_MS) {
     return NextResponse.json(
       { success: true, source: "cache", countries: cachedCountries },
       {
@@ -46,37 +40,37 @@ export async function GET() {
   }
 
   try {
-    // 100% Free Public REST API - Zero API Key required
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout prevents server hang
+
     const res = await fetch(
       "https://restcountries.com/v3.1/all?fields=name,cca2,idd,flag",
-      { next: { revalidate: 86400 } }
-    );
+      {
+        signal: controller.signal,
+        next: { revalidate: 86400 },
+      }
+    ).finally(() => clearTimeout(timeoutId));
 
-    if (!res.ok) throw new Error(`REST Countries API responded with ${res.status}`);
+    if (!res.ok) throw new Error(`REST Countries API responded with status ${res.status}`);
 
-    type RawCountry = {
-      name?: { common?: string };
-      cca2?: string;
-      flag?: string;
-      idd?: { root?: string; suffixes?: string[] };
-    };
+    const rawList = await res.json();
 
-    const rawList: RawCountry[] = await res.json();
+    // Guard against non-array responses (e.g. rate limit JSON objects or error objects)
+    if (!Array.isArray(rawList)) {
+      throw new Error("REST Countries API did not return an array list");
+    }
 
     const parsed: CountryItem[] = [];
 
     for (const c of rawList) {
-      const name = c.name?.common;
-      const code = c.cca2;
-      const flag = c.flag || "🌐";
-      const root = c.idd?.root;
-      const suffixes = c.idd?.suffixes;
+      const name = c?.name?.common;
+      const code = c?.cca2;
+      const flag = c?.flag || "🌐";
+      const root = c?.idd?.root;
+      const suffixes = c?.idd?.suffixes;
 
       if (!name || !code || !root) continue;
 
-      // Extract dial code (root + suffix)
-      // Some countries like USA have root="+1" and suffixes=["201", "202", ...]
-      // In that case, root is the international dial code "+1"
       let dialCode = root;
       if (suffixes && suffixes.length === 1) {
         dialCode = root + suffixes[0];
@@ -85,30 +79,29 @@ export async function GET() {
       parsed.push({ name, code, dialCode, flag });
     }
 
-    // Sort: popular countries first, then alphabetically
-    const popular: CountryItem[] = [];
-    const others: CountryItem[] = [];
+    if (parsed.length > 0) {
+      const popular: CountryItem[] = [];
+      const others: CountryItem[] = [];
 
-    for (const item of parsed) {
-      if (POPULAR_CODES.includes(item.code)) {
-        popular.push(item);
-      } else {
-        others.push(item);
+      for (const item of parsed) {
+        if (POPULAR_CODES.includes(item.code)) {
+          popular.push(item);
+        } else {
+          others.push(item);
+        }
       }
+
+      popular.sort(
+        (a, b) => POPULAR_CODES.indexOf(a.code) - POPULAR_CODES.indexOf(b.code)
+      );
+      others.sort((a, b) => a.name.localeCompare(b.name));
+
+      cachedCountries = [...popular, ...others];
+      lastFetchTime = now;
     }
 
-    popular.sort(
-      (a, b) => POPULAR_CODES.indexOf(a.code) - POPULAR_CODES.indexOf(b.code)
-    );
-    others.sort((a, b) => a.name.localeCompare(b.name));
-
-    const finalCountries = [...popular, ...others];
-
-    cachedCountries = finalCountries;
-    lastFetchTime = now;
-
     return NextResponse.json(
-      { success: true, source: "live-api", countries: finalCountries },
+      { success: true, source: "live-api", countries: cachedCountries },
       {
         headers: {
           "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
@@ -116,11 +109,11 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.warn("REST Countries API fetch failed, using reliable fallback:", error);
+    // Graceful fallback: return verified country list without crashing
     return NextResponse.json({
       success: true,
       source: "fallback",
-      countries: cachedCountries || FALLBACK_COUNTRIES,
+      countries: cachedCountries.length > 0 ? cachedCountries : FALLBACK_COUNTRIES,
     });
   }
 }
