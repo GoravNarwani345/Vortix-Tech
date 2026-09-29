@@ -17,6 +17,10 @@ export type AppSettings = {
   AI_INCLUDE_BLOG?: boolean;
   AI_INCLUDE_TESTIMONIALS?: boolean;
   AI_INCLUDE_GUIDE?: boolean;
+  STATS_PROJECTS_DELIVERED?: number;
+  STATS_HAPPY_CLIENTS?: number;
+  STATS_TECHNOLOGIES?: number;
+  STATS_TEAM_MEMBERS?: number;
 };
 
 const DATA_DIR = path.join(process.cwd(), "data");

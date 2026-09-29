@@ -5,6 +5,7 @@ import TechStack from "@/components/home/TechStack";
 import Testimonials from "@/components/home/Testimonials";
 import CTA from "@/components/home/CTA";
 import prisma from "@/lib/prisma";
+import { getCompanyStats } from "@/lib/companyStats";
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -17,28 +18,36 @@ export default async function HomePage() {
     rating: number;
   }[] = [];
 
+  let stats = undefined;
+
   try {
-    testimonials = await prisma.testimonial.findMany({
-      where: { isPublished: true },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        role: true,
-        content: true,
-        rating: true,
-      },
-      take: 6,
-    });
+    const [dbTestimonials, dbStats] = await Promise.all([
+      prisma.testimonial.findMany({
+        where: { isPublished: true },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          content: true,
+          rating: true,
+        },
+        take: 6,
+      }),
+      getCompanyStats(),
+    ]);
+
+    testimonials = dbTestimonials;
+    stats = dbStats;
   } catch {
-    // Database may not be available
+    // Database or stats may not be available during initial build
   }
 
   return (
     <>
       <Hero />
       <ServicesPreview />
-      <WhyChooseUs />
+      <WhyChooseUs initialStats={stats} />
       <TechStack />
       <Testimonials testimonials={testimonials} />
       <CTA />

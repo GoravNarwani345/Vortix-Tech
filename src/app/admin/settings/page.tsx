@@ -27,6 +27,7 @@ import {
   DollarSign,
   Gauge,
   Star,
+  BarChart3,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,10 @@ type SettingsData = {
   aiIncludeBlog: boolean;
   aiIncludeTestimonials: boolean;
   aiIncludeGuide: boolean;
+  statsProjectsDelivered?: number | null;
+  statsHappyClients?: number | null;
+  statsTechnologies?: number | null;
+  statsTeamMembers?: number | null;
 };
 
 type KnowledgeBreakdown = {
@@ -100,7 +105,7 @@ type AuditData = {
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<
-    "auth" | "ai" | "audit" | "cron"
+    "auth" | "ai" | "audit" | "cron" | "stats"
   >("audit");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -136,6 +141,13 @@ export default function AdminSettingsPage() {
   const [aiIncludeTestimonials, setAiIncludeTestimonials] = useState(true);
   const [aiIncludeGuide, setAiIncludeGuide] = useState(true);
 
+  // Company showcase & stats states
+  const [statsProjectsDelivered, setStatsProjectsDelivered] = useState<number | "">("");
+  const [statsHappyClients, setStatsHappyClients] = useState<number | "">("");
+  const [statsTechnologies, setStatsTechnologies] = useState<number | "">("");
+  const [statsTeamMembers, setStatsTeamMembers] = useState<number | "">("");
+  const [liveDbStats, setLiveDbStats] = useState<Array<{ label: string; value: number; suffix: string }> | null>(null);
+
   // Audit state
   const [auditData, setAuditData] = useState<AuditData | null>(null);
   const [showFullPrompt, setShowFullPrompt] = useState(false);
@@ -167,6 +179,20 @@ export default function AdminSettingsPage() {
         setAiIncludeBlog(s.aiIncludeBlog ?? true);
         setAiIncludeTestimonials(s.aiIncludeTestimonials ?? true);
         setAiIncludeGuide(s.aiIncludeGuide ?? true);
+        setStatsProjectsDelivered(typeof s.statsProjectsDelivered === "number" ? s.statsProjectsDelivered : "");
+        setStatsHappyClients(typeof s.statsHappyClients === "number" ? s.statsHappyClients : "");
+        setStatsTechnologies(typeof s.statsTechnologies === "number" ? s.statsTechnologies : "");
+        setStatsTeamMembers(typeof s.statsTeamMembers === "number" ? s.statsTeamMembers : "");
+
+        try {
+          const statsRes = await fetch("/api/stats");
+          const statsJson = await statsRes.json();
+          if (statsJson.success && Array.isArray(statsJson.stats)) {
+            setLiveDbStats(statsJson.stats);
+          }
+        } catch {
+          // Ignore live stats preview error
+        }
       }
     } catch (e) {
       console.error(e);
@@ -220,6 +246,10 @@ export default function AdminSettingsPage() {
         aiIncludeBlog,
         aiIncludeTestimonials,
         aiIncludeGuide,
+        statsProjectsDelivered: statsProjectsDelivered === "" ? null : Number(statsProjectsDelivered),
+        statsHappyClients: statsHappyClients === "" ? null : Number(statsHappyClients),
+        statsTechnologies: statsTechnologies === "" ? null : Number(statsTechnologies),
+        statsTeamMembers: statsTeamMembers === "" ? null : Number(statsTeamMembers),
       };
 
       if (newPassword) payload.adminPassword = newPassword;
@@ -391,6 +421,17 @@ export default function AdminSettingsPage() {
         >
           <KeyRound size={18} />
           Admin Credentials & Auth
+        </button>
+        <button
+          onClick={() => setActiveTab("stats")}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
+            activeTab === "stats"
+              ? "bg-accent text-white shadow-sm"
+              : "text-foreground-muted hover:text-foreground hover:bg-card-bg"
+          }`}
+        >
+          <BarChart3 size={18} />
+          Company Showcase & Stats
         </button>
       </div>
 
@@ -1302,6 +1343,199 @@ export default function AdminSettingsPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* TAB 5: COMPANY STATS & METRICS */}
+          {activeTab === "stats" && (
+            <div className="space-y-8">
+              {/* Header Box */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                      <BarChart3 className="text-accent" size={20} />
+                      Homepage Metrics & Showcase Stats
+                    </h3>
+                    <p className="text-xs text-foreground-muted mt-1 max-w-2xl">
+                      These numbers power the &ldquo;Why Vortix Tech / A partner you can rely on to scale&rdquo; counter grid on the homepage. They are dynamically calculated from real database records (Projects, Testimonials, Tech Tags) by default, or you can specify exact custom overrides here.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => void handleSaveSettings()}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-medium text-sm transition-all shadow-sm shrink-0"
+                  >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    Save Stats
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Preview Cards (Matching Homepage) */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-3 flex items-center gap-2">
+                  <Eye size={14} className="text-accent" />
+                  Live Display Preview (Homepage / Why Vortix Tech)
+                </h4>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                    <div className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                      {statsProjectsDelivered !== ""
+                        ? `${statsProjectsDelivered}+`
+                        : liveDbStats?.find((s) => s.label.includes("Projects"))
+                        ? `${liveDbStats.find((s) => s.label.includes("Projects"))?.value}+`
+                        : "15+"}
+                    </div>
+                    <p className="text-xs font-medium text-foreground-muted">Projects Delivered</p>
+                    <span className="text-[10px] text-accent mt-2 inline-block">
+                      {statsProjectsDelivered !== "" ? "Custom Override" : "Auto-computed from DB"}
+                    </span>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                    <div className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                      {statsHappyClients !== ""
+                        ? `${statsHappyClients}+`
+                        : liveDbStats?.find((s) => s.label.includes("Clients"))
+                        ? `${liveDbStats.find((s) => s.label.includes("Clients"))?.value}+`
+                        : "8+"}
+                    </div>
+                    <p className="text-xs font-medium text-foreground-muted">Happy Clients</p>
+                    <span className="text-[10px] text-accent mt-2 inline-block">
+                      {statsHappyClients !== "" ? "Custom Override" : "Auto-computed from Testimonials"}
+                    </span>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                    <div className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                      {statsTechnologies !== ""
+                        ? `${statsTechnologies}+`
+                        : liveDbStats?.find((s) => s.label.includes("Technologies"))
+                        ? `${liveDbStats.find((s) => s.label.includes("Technologies"))?.value}+`
+                        : "15+"}
+                    </div>
+                    <p className="text-xs font-medium text-foreground-muted">Technologies</p>
+                    <span className="text-[10px] text-accent mt-2 inline-block">
+                      {statsTechnologies !== "" ? "Custom Override" : "Auto-computed from Tech Stack"}
+                    </span>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                    <div className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                      {statsTeamMembers !== ""
+                        ? statsTeamMembers
+                        : liveDbStats?.find((s) => s.label.includes("Team"))
+                        ? liveDbStats.find((s) => s.label.includes("Team"))?.value
+                        : "4"}
+                    </div>
+                    <p className="text-xs font-medium text-foreground-muted">Team Members</p>
+                    <span className="text-[10px] text-accent mt-2 inline-block">
+                      {statsTeamMembers !== "" ? "Custom Override" : "Configured Team Size"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Form */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                <h4 className="text-sm font-bold text-foreground mb-6">
+                  Configure Metrics & Overrides
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Projects Delivered Override
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={statsProjectsDelivered}
+                      onChange={(e) =>
+                        setStatsProjectsDelivered(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      placeholder="Leave blank for automatic DB calculation (min: 15+)"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-xs text-foreground-muted mt-1.5">
+                      Leave blank to auto-calculate from published portfolio items.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Happy Clients Override
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={statsHappyClients}
+                      onChange={(e) =>
+                        setStatsHappyClients(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      placeholder="Leave blank for automatic DB calculation (min: 8+)"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-xs text-foreground-muted mt-1.5">
+                      Leave blank to auto-calculate from client testimonials.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Technologies Mastered Override
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={statsTechnologies}
+                      onChange={(e) =>
+                        setStatsTechnologies(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      placeholder="Leave blank for automatic unique tags count (min: 15+)"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-xs text-foreground-muted mt-1.5">
+                      Leave blank to auto-calculate unique framework & tool tags.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Team Members Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={statsTeamMembers}
+                      onChange={(e) =>
+                        setStatsTeamMembers(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      placeholder="Default: 4"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-xs text-foreground-muted mt-1.5">
+                      Total core engineers and designers on the team.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-card-border mt-8 flex items-center justify-between">
+                  <div className="text-xs text-foreground-muted">
+                    Changes take effect on the homepage immediately upon saving.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveSettings()}
+                    disabled={saving}
+                    className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-white font-medium text-sm rounded-xl transition-all shadow-sm flex items-center gap-2"
+                  >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    Save Showcase Metrics
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </>

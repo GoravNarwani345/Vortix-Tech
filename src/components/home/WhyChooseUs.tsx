@@ -1,15 +1,10 @@
 "use client";
 
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { useEffect, useRef } from "react";
-import { Shield, Zap, Users, Headphones, CheckCircle2 } from "lucide-react";
-
-const stats = [
-  { label: "Projects Delivered", value: 15, suffix: "+" },
-  { label: "Happy Clients", value: 8, suffix: "+" },
-  { label: "Technologies", value: 15, suffix: "+" },
-  { label: "Team Members", value: 4, suffix: "" },
-];
+import { useEffect, useRef, useState } from "react";
+import { Shield, Zap, Users, Headphones, CheckCircle2, ArrowRight } from "lucide-react";
+import { useContactModal } from "@/components/layout/ContactModalContext";
+import { DEFAULT_STATS, type StatItem } from "@/lib/companyStatsTypes";
 
 const features = [
   {
@@ -42,11 +37,11 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) => Math.round(latest));
   const ref = useRef(null);
-  
+
   useEffect(() => {
     const animation = animate(count, value, {
-      duration: 2,
-      delay: 0.2,
+      duration: 1.8,
+      delay: 0.1,
       ease: "easeOut",
     });
     return animation.stop;
@@ -60,12 +55,28 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   );
 }
 
-export default function WhyChooseUs() {
+export default function WhyChooseUs({ initialStats }: { initialStats?: StatItem[] }) {
+  const [stats, setStats] = useState<StatItem[]>(initialStats || DEFAULT_STATS);
+  const { openModal } = useContactModal();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/stats");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.stats) && json.stats.length > 0) {
+          setStats(json.stats);
+        }
+      } catch {
+        // Fallback to initial stats
+      }
+    })();
+  }, []);
+
   return (
     <section className="bg-[#FAF7F2] py-24 sm:py-32">
       <div className="container-custom">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-          
           {/* Left Column: Content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -89,12 +100,12 @@ export default function WhyChooseUs() {
               {features.map((feature, idx) => {
                 const Icon = feature.icon;
                 return (
-                  <div key={idx} className="flex gap-4">
-                    <div className="mt-1 w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center shrink-0">
+                  <div key={idx} className="flex gap-4 group">
+                    <div className="mt-1 w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110">
                       <Icon size={24} className="text-accent" />
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold text-gray-900 mb-2">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-accent transition-colors">
                         {feature.title}
                       </h4>
                       <p className="text-gray-600 leading-relaxed">
@@ -107,7 +118,7 @@ export default function WhyChooseUs() {
             </div>
           </motion.div>
 
-          {/* Right Column: Stats Grid */}
+          {/* Right Column: Dynamic Stats Grid */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -116,9 +127,9 @@ export default function WhyChooseUs() {
             className="grid grid-cols-2 gap-4 sm:gap-6"
           >
             {stats.map((stat, idx) => (
-              <div 
+              <div
                 key={idx}
-                className="premium-card p-6 sm:p-8 flex flex-col justify-center bg-white"
+                className="premium-card p-6 sm:p-8 flex flex-col justify-center bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
               >
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                 <p className="text-gray-500 font-medium text-sm sm:text-base mt-2">
@@ -126,22 +137,36 @@ export default function WhyChooseUs() {
                 </p>
               </div>
             ))}
-            
-            {/* Added a solid trust badge card to fill out the grid nicely if needed, or just let them be 4 boxes. The 4 boxes are perfect. */}
-            <div className="col-span-2 premium-card p-6 sm:p-8 bg-gray-900 text-white mt-2 relative overflow-hidden group cursor-pointer">
+
+            {/* Interactive Trust & Contact CTA Card */}
+            <div
+              onClick={openModal}
+              className="col-span-2 premium-card p-6 sm:p-8 bg-gray-900 text-white mt-2 relative overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.01]"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  openModal();
+                }
+              }}
+            >
               <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
-                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center shrink-0">
+                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-accent/20 transition-all duration-300">
                   <CheckCircle2 size={32} className="text-accent" />
                 </div>
-                <div>
-                  <h4 className="text-xl font-bold mb-2">Ready to scale?</h4>
-                  <p className="text-gray-400 text-sm">Ready to build your next project with a team that cares about quality?</p>
+                <div className="flex-1 text-center sm:text-left">
+                  <h4 className="text-xl font-bold mb-2 flex items-center justify-center sm:justify-start gap-2 group-hover:text-accent transition-colors">
+                    Ready to scale?
+                    <ArrowRight size={18} className="text-accent group-hover:translate-x-1.5 transition-transform" />
+                  </h4>
+                  <p className="text-gray-400 text-sm">
+                    Ready to build your next project with a team that cares about quality? Tap to get in touch.
+                  </p>
                 </div>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 blur-3xl rounded-full group-hover:bg-accent/40 transition-colors" />
             </div>
           </motion.div>
-          
         </div>
       </div>
     </section>

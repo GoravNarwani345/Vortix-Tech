@@ -49,6 +49,10 @@ export async function GET() {
       aiIncludeBlog: stored.AI_INCLUDE_BLOG ?? true,
       aiIncludeTestimonials: stored.AI_INCLUDE_TESTIMONIALS ?? true,
       aiIncludeGuide: stored.AI_INCLUDE_GUIDE ?? true,
+      statsProjectsDelivered: stored.STATS_PROJECTS_DELIVERED ?? null,
+      statsHappyClients: stored.STATS_HAPPY_CLIENTS ?? null,
+      statsTechnologies: stored.STATS_TECHNOLOGIES ?? null,
+      statsTeamMembers: stored.STATS_TEAM_MEMBERS ?? null,
     };
 
     return NextResponse.json({ success: true, settings: publicSettings });
@@ -134,6 +138,26 @@ export async function POST(req: Request) {
 
     if (typeof body.aiIncludeGuide === "boolean") {
       updates.AI_INCLUDE_GUIDE = body.aiIncludeGuide;
+    }
+
+    if (body.statsProjectsDelivered !== undefined) {
+      const val = Number(body.statsProjectsDelivered);
+      updates.STATS_PROJECTS_DELIVERED = isNaN(val) || val <= 0 ? undefined : val;
+    }
+
+    if (body.statsHappyClients !== undefined) {
+      const val = Number(body.statsHappyClients);
+      updates.STATS_HAPPY_CLIENTS = isNaN(val) || val <= 0 ? undefined : val;
+    }
+
+    if (body.statsTechnologies !== undefined) {
+      const val = Number(body.statsTechnologies);
+      updates.STATS_TECHNOLOGIES = isNaN(val) || val <= 0 ? undefined : val;
+    }
+
+    if (body.statsTeamMembers !== undefined) {
+      const val = Number(body.statsTeamMembers);
+      updates.STATS_TEAM_MEMBERS = isNaN(val) || val <= 0 ? undefined : val;
     }
 
     await updateSettings(updates);
