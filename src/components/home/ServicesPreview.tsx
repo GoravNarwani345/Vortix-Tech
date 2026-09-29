@@ -183,7 +183,7 @@ export default function ServicesPreview() {
                     <h3 className="text-gray-900 font-bold text-lg mb-3 group-hover:text-accent transition-colors">
                       {service.title}
                     </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
+                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
                       {service.description}
                     </p>
                   </div>
