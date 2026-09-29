@@ -137,14 +137,47 @@ export async function compileAiKnowledge(): Promise<{
 - Core Value: We build cutting-edge production-grade software with an AI-first mindset, transforming business efficiency.
 - Consultation & Pricing: We provide bespoke custom pricing tailored to scope. Always warmly encourage visitors to schedule a free 30-minute discovery consultation or reach out on WhatsApp (+92 314 2189730).`;
 
-  // 2. Services Section
+  // 2. Services Section (Dynamic from Database with Fallback)
+  let servicesCount = 0;
   let servicesSection = "";
   if (settings.AI_INCLUDE_SERVICES !== false) {
-    const list = CORE_SERVICES.map(
-      (s, idx) =>
-        `${idx + 1}. ${s.title}\n   - Tech Stack: ${s.stack}\n   - Description: ${s.description}`
-    ).join("\n\n");
-    servicesSection = `=== OUR CORE SERVICES & CAPABILITIES ===\n${list}`;
+    let activeServices: Array<{
+      title: string;
+      category: string;
+      description: string;
+      features: string[];
+    }> = [];
+
+    try {
+      const dbServices = await prisma.service.findMany({
+        where: { isPublished: true },
+        orderBy: { order: "asc" },
+        select: { title: true, category: true, description: true, features: true },
+      });
+      if (dbServices.length > 0) {
+        activeServices = dbServices;
+      }
+    } catch {
+      // fallback to CORE_SERVICES below if query fails
+    }
+
+    if (activeServices.length > 0) {
+      const list = activeServices
+        .map(
+          (s, idx) =>
+            `${idx + 1}. ${s.title} (${s.category})\n   - Description: ${s.description}\n   - Deliverables & Tech: ${s.features.join(", ")}`
+        )
+        .join("\n\n");
+      servicesSection = `=== OUR CORE SERVICES & CAPABILITIES ===\n${list}`;
+      servicesCount = activeServices.length;
+    } else {
+      const list = CORE_SERVICES.map(
+        (s, idx) =>
+          `${idx + 1}. ${s.title}\n   - Tech Stack: ${s.stack}\n   - Description: ${s.description}`
+      ).join("\n\n");
+      servicesSection = `=== OUR CORE SERVICES & CAPABILITIES ===\n${list}`;
+      servicesCount = CORE_SERVICES.length;
+    }
   }
 
   // 3. Projects Section (from Prisma DB with Fallback)
@@ -294,10 +327,10 @@ ${customInstructions ? `\n=== CUSTOM INSTRUCTIONS FROM ADMIN ===\n${customInstru
     },
     {
       name: "Services & Capabilities",
-      count: CORE_SERVICES.length,
+      count: servicesCount,
       chars: servicesSection.length,
       tokens: Math.ceil(servicesSection.length / 4),
-      preview: "8 specialized service offerings (Web, Mobile, n8n, ComfyUI, LLMs, Cloud)...",
+      preview: `${servicesCount} specialized service offerings (Web, Mobile, n8n, ComfyUI, LLMs, Cloud)...`,
     },
     {
       name: "Portfolio & Case Studies",
@@ -342,7 +375,7 @@ ${customInstructions ? `\n=== CUSTOM INSTRUCTIONS FROM ADMIN ===\n${customInstru
     estimatedTokens,
     breakdown,
     itemsCount: {
-      services: CORE_SERVICES.length,
+      services: servicesCount,
       projects: dbProjects.length,
       articles: dbArticles.length,
       testimonials: dbTestimonials.length,

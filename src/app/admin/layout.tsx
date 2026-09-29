@@ -18,12 +18,16 @@ import {
   PanelLeft,
   ExternalLink,
   ShieldCheck,
+  Server,
+  Tags,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoMark from "@/components/layout/LogoMark";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Services", href: "/admin/services", icon: Server },
+  { name: "Categories", href: "/admin/categories", icon: Tags },
   { name: "Portfolio", href: "/admin/portfolio", icon: Briefcase },
   { name: "Blog", href: "/admin/blog", icon: FileText },
   { name: "Testimonials", href: "/admin/testimonials", icon: Star },

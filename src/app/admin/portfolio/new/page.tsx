@@ -1,16 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Plus, X, Upload } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Upload, Loader2, Link as LinkIcon, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import ProjectSeoAuditCard from "@/components/admin/ProjectSeoAuditCard";
+import { compressImage, formatBytes } from "@/lib/imageCompression";
 
 export default function NewProjectPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [categories, setCategories] = useState<string[]>([
+    "Web App",
+    "Mobile App",
+    "AI & Automation",
+    "Design & Cloud",
+    "Development",
+  ]);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -22,20 +33,73 @@ export default function NewProjectPage() {
     isPublished: true,
   });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/categories?scope=PORTFOLIO");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const names: string[] = json.data.map((c: { name: string }) => c.name);
+          setCategories(names);
+          if (!names.includes(formData.category)) {
+            setFormData((prev) => ({ ...prev, category: names[0] }));
+          }
+        }
+      } catch {
+        // Keep fallback categories
+      }
+    })();
+  }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImages([...images, reader.result as string]);
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Original image must be less than 20MB");
+      return;
+    }
+
+    setCompressing(true);
+    const toastId = toast.loading("Optimizing & compressing image...");
+
+    try {
+      const result = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
+      });
+
+      setImages((prev) => [...prev, result.dataUrl]);
+      toast.success(
+        `Optimized! ${formatBytes(result.originalSize)} -> ${formatBytes(result.compressedSize)} (${result.compressionRatio}% smaller)`,
+        { id: toastId }
+      );
+    } catch {
+      toast.error("Failed to process image", { id: toastId });
+    } finally {
+      setCompressing(false);
+      // Reset input value so same file can be re-selected if needed
+      e.target.value = "";
+    }
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrl.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+      toast.error("Please enter a valid URL starting with http:// or https://");
+      return;
+    }
+    setImages((prev) => [...prev, trimmed]);
+    setImageUrl("");
+    setShowUrlInput(false);
+    toast.success("Image URL added!");
   };
 
   const removeImage = (index: number) => {
@@ -58,18 +122,70 @@ export default function NewProjectPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      if (res.status === 413) {
+        toast.error(
+          "Request entity too large (413). Please reduce the number of images or configure server upload limits."
+        );
+        return;
+      }
 
-      if (data.success) {
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        toast.error(`Server error (${res.status}). Server returned an invalid response.`);
+        return;
+      }
+
+      if (res.ok && data?.success) {
         toast.success("Project created successfully!");
         router.push("/admin/portfolio");
       } else {
-        toast.error(data.error || "Failed to create project");
+        toast.error(data?.error || "Failed to create project");
       }
     } catch (error) {
-      toast.error("An error occurred");
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [tagInput, setTagInput] = useState("");
+
+  const addTag = (tagToAdd: string) => {
+    const trimmed = tagToAdd.trim().replace(/^,+|,+$/g, "");
+    if (!trimmed) return;
+    const currentTags = formData.tags
+      ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean)
+      : [];
+    if (currentTags.some((t) => t.toLowerCase() === trimmed.toLowerCase())) {
+      toast("Tag already added");
+      setTagInput("");
+      return;
+    }
+    const updated = [...currentTags, trimmed].join(", ");
+    setFormData((prev) => ({ ...prev, tags: updated }));
+    setTagInput("");
+  };
+
+  const removeTag = (indexToRemove: number) => {
+    const currentTags = formData.tags
+      ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean)
+      : [];
+    const updated = currentTags.filter((_, i) => i !== indexToRemove).join(", ");
+    setFormData((prev) => ({ ...prev, tags: updated }));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      e.stopPropagation();
+      addTag(tagInput);
+    } else if (e.key === "Backspace" && !tagInput && formData.tags) {
+      const currentTags = formData.tags.split(",").map((t) => t.trim()).filter(Boolean);
+      if (currentTags.length > 0) {
+        removeTag(currentTags.length - 1);
+      }
     }
   };
 
@@ -90,7 +206,16 @@ export default function NewProjectPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          // Prevent accidental form submission when pressing Enter inside text inputs
+          if (e.key === "Enter" && (e.target as HTMLElement)?.tagName === "INPUT") {
+            e.preventDefault();
+          }
+        }}
+        className="space-y-8"
+      >
         <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
@@ -111,34 +236,95 @@ export default function NewProjectPage() {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
               >
-                <option value="Web App">Web App</option>
-                <option value="Mobile App">Mobile App</option>
-                <option value="AI & Automation">AI & Automation</option>
-                <option value="Design & Cloud">Design & Cloud</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+                {!categories.includes(formData.category) && formData.category && (
+                  <option value={formData.category}>{formData.category}</option>
+                )}
               </select>
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Project Images</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-gray-900">Project Images</label>
+              <button
+                type="button"
+                onClick={() => setShowUrlInput(!showUrlInput)}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+              >
+                <LinkIcon size={12} />
+                {showUrlInput ? "Hide URL input" : "+ Add image via URL"}
+              </button>
+            </div>
+
+            {showUrlInput && (
+              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddImageUrl();
+                    }
+                  }}
+                  placeholder="Paste direct image URL (https://...)"
+                  className="flex-1 px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-accent"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-4 py-2 text-xs font-semibold bg-gray-900 text-white rounded-lg hover:bg-black transition-colors"
+                >
+                  Add URL
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
               {images.map((img, i) => (
-                <div key={i} className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 group">
+                <div key={i} className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 group bg-gray-100">
                   <img src={img} alt={`Preview ${i}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                    title="Remove image"
                   >
-                    <X size={16} />
+                    <X size={14} />
                   </button>
                 </div>
               ))}
               
-              <label className="aspect-video rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-accent transition-all">
-                <Upload size={24} className="mb-2" />
-                <span className="text-sm font-medium">Add Image</span>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <label
+                className={`aspect-video rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-accent transition-all ${
+                  compressing ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                {compressing ? (
+                  <>
+                    <Loader2 size={24} className="mb-2 animate-spin text-indigo-600" />
+                    <span className="text-xs font-medium text-indigo-600">Compressing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={24} className="mb-2" />
+                    <span className="text-sm font-medium">Upload File</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5">Auto-compressed</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={compressing}
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
               </label>
             </div>
           </div>
@@ -155,16 +341,57 @@ export default function NewProjectPage() {
             />
           </div>
 
+          {/* Interactive Tags System */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Tags (Comma separated)</label>
-            <input
-              type="text"
-              required
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
-              placeholder="e.g. Next.js, React Native, Tailwind CSS"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-gray-900">
+                Tags & Tech Stack <span className="text-red-500">*</span>
+              </label>
+              <span className="text-xs text-gray-400">Type tag & press Enter or comma</span>
+            </div>
+
+            {/* Tag Badges */}
+            <div className="flex flex-wrap gap-2 mb-2.5 min-h-[32px]">
+              {formData.tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .map((tag, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-semibold animate-fadeIn"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(i)}
+                      className="hover:text-red-500 transition-colors ml-0.5"
+                      title="Remove tag"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+            </div>
+
+            {/* Tag Input Field */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder="e.g. Next.js, React, Tailwind CSS (press Enter or comma)"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => addTag(tagInput)}
+                className="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium text-sm transition-colors shrink-0"
+              >
+                Add Tag
+              </button>
+            </div>
           </div>
 
           {/* AI SEO Audit & Keyword Suggestion */}

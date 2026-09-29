@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import {
@@ -88,6 +89,17 @@ const services = [
   },
 ];
 
+const ICON_LOOKUP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  Smartphone,
+  Globe,
+  Workflow,
+  Palette,
+  Bot,
+  Link2,
+  PenTool,
+  Cloud,
+};
+
 const containerVariants: Variants = {
   hidden: {},
   visible: {
@@ -101,6 +113,27 @@ const cardVariants: Variants = {
 };
 
 export default function ServicesPreview() {
+  const [liveServices, setLiveServices] = useState(services);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/services");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setLiveServices(
+            json.data.slice(0, 8).map((s: any) => ({
+              ...s,
+              icon: typeof s.icon === "string" ? ICON_LOOKUP[s.icon] || Globe : s.icon || Globe,
+            }))
+          );
+        }
+      } catch {
+        // Keep fallback
+      }
+    })();
+  }, []);
+
   return (
     <section className="relative overflow-hidden bg-background py-24 sm:py-32">
       <div className="container-custom relative z-10">
@@ -133,8 +166,8 @@ export default function ServicesPreview() {
           viewport={{ once: true, margin: "-50px" }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-          {services.map((service) => {
-            const Icon = service.icon;
+          {liveServices.map((service) => {
+            const Icon = service.icon || Globe;
             return (
                <motion.div key={service.slug} variants={cardVariants} className="h-full">
                 <Link href={`/services`} className="block h-full">

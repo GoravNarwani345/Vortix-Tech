@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, ChevronRight } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { useContactModal } from "@/components/layout/ContactModalContext";
-
-const categories = ["All", "Web App", "Mobile App", "AI & Automation", "Design & Cloud"];
 
 type Project = {
   title: string;
@@ -19,13 +17,37 @@ type Project = {
 };
 
 export default function PortfolioContent({ projects = [] }: { projects: Project[] }) {
+  const [categories, setCategories] = useState<string[]>([
+    "All",
+    "Web App",
+    "Mobile App",
+    "AI & Automation",
+    "Design & Cloud",
+  ]);
   const [activeCategory, setActiveCategory] = useState("All");
   const { openModal } = useContactModal();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/categories?scope=PORTFOLIO");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const fetchedNames = json.data.map((c: { name: string }) => c.name);
+          const projectCategories = projects.map((p) => p.category).filter(Boolean);
+          const combined = ["All", ...fetchedNames, ...projectCategories];
+          setCategories(Array.from(new Set(combined)));
+        }
+      } catch {
+        // Keep fallback
+      }
+    })();
+  }, [projects]);
 
   const filtered =
     activeCategory === "All"
       ? projects
-      : projects.filter((p) => p.category === activeCategory);
+      : projects.filter((p) => p.category?.toLowerCase() === activeCategory.toLowerCase());
 
   return (
     <div className="pt-20">

@@ -19,8 +19,8 @@ describe("AI Knowledge Engine", () => {
     expect(result.compiledPrompt).toContain("Vortix Tech");
     expect(result.compiledPrompt).toContain("Mobile App Development");
     expect(result.compiledPrompt).toContain("Web Application Development");
-    expect(result.compiledPrompt).toContain("n8n Workflow Automation");
-    expect(result.compiledPrompt).toContain("ComfyUI Workflows");
+    expect(result.compiledPrompt).toContain("n8n Automation");
+    expect(result.compiledPrompt).toContain("ComfyUI");
     expect(result.compiledPrompt).toContain("LLM Solutions");
 
     // Verify source breakdown has entries

@@ -42,6 +42,8 @@ export async function GET() {
     }> = [];
 
     let totalTestimonials = 0;
+    let totalServices = 0;
+    let totalCategories = 0;
 
     try {
       [
@@ -53,6 +55,8 @@ export async function GET() {
         totalArticles,
         recentArticles,
         totalTestimonials,
+        totalServices,
+        totalCategories,
       ] = await Promise.all([
         prisma.feedback.count(),
         prisma.feedback.count({ where: { status: "New" } }),
@@ -94,6 +98,8 @@ export async function GET() {
           },
         }),
         prisma.testimonial.count(),
+        prisma.service.count(),
+        prisma.category.count(),
       ]);
     } catch (dbErr) {
       console.warn("DB query warning in overview:", dbErr);
@@ -131,6 +137,8 @@ export async function GET() {
         totalProjects,
         totalArticles,
         totalTestimonials,
+        totalServices,
+        totalCategories,
         aiKnowledge: aiStats,
       },
       recentFeedbacks,

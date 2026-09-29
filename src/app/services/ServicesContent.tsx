@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Smartphone,
@@ -11,152 +11,90 @@ import {
   Link2,
   PenTool,
   Cloud,
+  Database,
+  Cpu,
+  ShieldCheck,
+  Terminal,
+  Layers,
+  Sparkles,
+  Code,
+  Zap,
   ArrowRight,
   CheckCircle,
 } from "lucide-react";
 import { useContactModal } from "@/components/layout/ContactModalContext";
+import { DEFAULT_SERVICES } from "@/lib/seedData";
 
-const categories = ["All", "Development", "AI & Automation", "Design & Cloud"];
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  Smartphone,
+  Globe,
+  Workflow,
+  Palette,
+  Bot,
+  Link2,
+  PenTool,
+  Cloud,
+  Database,
+  Cpu,
+  ShieldCheck,
+  Terminal,
+  Layers,
+  Sparkles,
+  Code,
+  Zap,
+};
 
-const services = [
-  {
-    icon: Smartphone,
-    title: "Mobile App Development",
-    slug: "app-development",
-    category: "Development",
-    description:
-      "Native-quality cross-platform mobile applications built with React Native.",
-    features: [
-      "Cross-platform iOS & Android",
-      "Native performance",
-      "Push notifications & analytics",
-      "App Store deployment",
-    ],
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-500",
-  },
-  {
-    icon: Globe,
-    title: "Web Application Development",
-    slug: "web-applications",
-    category: "Development",
-    description:
-      "Full-stack web applications with Next.js, React, Node.js, and modern cloud infrastructure.",
-    features: [
-      "Next.js & React frontends",
-      "Node.js & Express backends",
-      "Database design & optimization",
-      "SEO & performance optimized",
-    ],
-    iconBg: "bg-accent/10",
-    iconColor: "text-accent",
-  },
-  {
-    icon: Workflow,
-    title: "n8n Automation",
-    slug: "n8n-automation",
-    category: "AI & Automation",
-    description:
-      "Custom workflow automations that connect your tools, eliminate manual tasks, and save hundreds of hours.",
-    features: [
-      "Custom n8n workflows",
-      "API integrations",
-      "Data pipeline automation",
-      "CRM & email automation",
-    ],
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-500",
-  },
-  {
-    icon: Palette,
-    title: "ComfyUI Custom Workflows",
-    slug: "comfyui-workflows",
-    category: "AI & Automation",
-    description:
-      "Advanced AI image and video generation pipelines with custom ComfyUI nodes and FLUX/WAN models.",
-    features: [
-      "Custom ComfyUI nodes",
-      "FLUX & WAN model integration",
-      "Batch image generation",
-      "Video generation pipelines",
-    ],
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-500",
-  },
-  {
-    icon: Bot,
-    title: "LLM Solutions",
-    slug: "llm-solutions",
-    category: "AI & Automation",
-    description:
-      "Custom AI agents, RAG systems, fine-tuned models, and intelligent chatbots for your business.",
-    features: [
-      "Custom AI chatbots",
-      "RAG (Retrieval-Augmented Generation)",
-      "LLM fine-tuning",
-      "AI agent development",
-    ],
-    iconBg: "bg-green-50",
-    iconColor: "text-green-500",
-  },
-  {
-    icon: Link2,
-    title: "API Development & Integration",
-    slug: "api-development",
-    category: "Development",
-    description:
-      "Robust REST & GraphQL APIs, third-party service integrations, and microservice architecture.",
-    features: [
-      "REST & GraphQL APIs",
-      "Third-party integrations",
-      "Microservices architecture",
-      "API documentation & testing",
-    ],
-    iconBg: "bg-rose-50",
-    iconColor: "text-rose-500",
-  },
-  {
-    icon: PenTool,
-    title: "UI/UX Design",
-    slug: "ui-ux-design",
-    category: "Design & Cloud",
-    description:
-      "Modern, intuitive interface design with user experience research, prototyping, and design systems.",
-    features: [
-      "User research & wireframing",
-      "High-fidelity prototypes",
-      "Design systems",
-      "Responsive design",
-    ],
-    iconBg: "bg-indigo-50",
-    iconColor: "text-indigo-500",
-  },
-  {
-    icon: Cloud,
-    title: "Cloud & DevOps",
-    slug: "cloud-devops",
-    category: "Design & Cloud",
-    description:
-      "AWS deployment, Docker containerization, CI/CD pipelines, and infrastructure management.",
-    features: [
-      "AWS & cloud deployment",
-      "Docker & Kubernetes",
-      "CI/CD pipelines",
-      "Monitoring & scaling",
-    ],
-    iconBg: "bg-sky-50",
-    iconColor: "text-sky-500",
-  },
-];
+type ServiceItem = {
+  title: string;
+  slug: string;
+  category: string;
+  description: string;
+  features: string[];
+  icon: string | React.ComponentType<{ size?: number; className?: string }>;
+  iconBg: string;
+  iconColor: string;
+};
 
 export default function ServicesContent() {
+  const [categories, setCategories] = useState<string[]>([
+    "All",
+    "Development",
+    "AI & Automation",
+    "Design & Cloud",
+  ]);
+  const [servicesList, setServicesList] = useState<ServiceItem[]>(DEFAULT_SERVICES as any);
   const [activeCategory, setActiveCategory] = useState("All");
   const { openModal } = useContactModal();
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const [servicesRes, categoriesRes] = await Promise.all([
+          fetch("/api/services"),
+          fetch("/api/categories?scope=SERVICES"),
+        ]);
+
+        const servicesData = await servicesRes.json();
+        const categoriesData = await categoriesRes.json();
+
+        if (servicesData.success && Array.isArray(servicesData.data) && servicesData.data.length > 0) {
+          setServicesList(servicesData.data);
+        }
+
+        if (categoriesData.success && Array.isArray(categoriesData.data) && categoriesData.data.length > 0) {
+          const names = ["All", ...categoriesData.data.map((c: { name: string }) => c.name)];
+          setCategories(Array.from(new Set(names)));
+        }
+      } catch {
+        // Keep fallback data
+      }
+    })();
+  }, []);
+
   const filtered =
     activeCategory === "All"
-      ? services
-      : services.filter((s) => s.category === activeCategory);
+      ? servicesList
+      : servicesList.filter((s) => s.category.toLowerCase() === activeCategory.toLowerCase());
 
   return (
     <div className="pt-20">
@@ -191,6 +129,7 @@ export default function ServicesContent() {
             {categories.map((cat) => (
               <button
                 key={cat}
+                type="button"
                 onClick={() => setActiveCategory(cat)}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                   activeCategory === cat
@@ -206,7 +145,11 @@ export default function ServicesContent() {
           {/* Services Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filtered.map((service, i) => {
-              const Icon = service.icon;
+              const Icon =
+                typeof service.icon === "string"
+                  ? ICON_MAP[service.icon] || Globe
+                  : service.icon || Globe;
+
               return (
                 <motion.div
                   key={service.slug}
@@ -219,9 +162,9 @@ export default function ServicesContent() {
                 >
                   <div className="flex items-start gap-4 mb-6">
                     <div
-                      className={`w-14 h-14 rounded-xl ${service.iconBg} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}
+                      className={`w-14 h-14 rounded-xl ${service.iconBg || "bg-blue-50"} flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110`}
                     >
-                      <Icon size={28} className={service.iconColor} />
+                      <Icon size={28} className={service.iconColor || "text-blue-500"} />
                     </div>
                     <div>
                       <h3 className="text-gray-900 font-bold text-lg leading-tight mb-2 group-hover:text-accent transition-colors">
@@ -251,6 +194,7 @@ export default function ServicesContent() {
                   </ul>
 
                   <button
+                    type="button"
                     onClick={openModal}
                     className="inline-flex items-center gap-2 text-gray-900 font-bold text-sm hover:text-accent transition-colors mt-auto group/link w-fit"
                   >
@@ -283,6 +227,7 @@ export default function ServicesContent() {
               Let&apos;s discuss your unique requirements.
             </p>
             <button
+              type="button"
               onClick={openModal}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-900 text-white font-bold text-lg rounded-full transition-all duration-300 hover:bg-black hover:shadow-lg"
             >
