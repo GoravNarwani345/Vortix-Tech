@@ -21,6 +21,15 @@ export type AppSettings = {
   STATS_HAPPY_CLIENTS?: number;
   STATS_TECHNOLOGIES?: number;
   STATS_TEAM_MEMBERS?: number;
+  HERO_BADGE?: string;
+  HERO_TITLE_PREFIX?: string;
+  HERO_TITLE_ACCENT?: string;
+  HERO_TITLE_SUFFIX?: string;
+  HERO_SUBTITLE_PREFIX?: string;
+  HERO_ROTATING_WORDS?: string;
+  HERO_DESCRIPTION?: string;
+  HERO_PRIMARY_CTA?: string;
+  HERO_SECONDARY_CTA?: string;
 };
 
 const DATA_DIR = path.join(process.cwd(), "data");

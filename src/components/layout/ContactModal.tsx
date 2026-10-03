@@ -168,6 +168,7 @@ export default function ContactModal() {
                       <option value="AI / LLM">AI & LLM Solutions</option>
                       <option value="Automation">n8n / Automations</option>
                       <option value="DME & Healthcare Operations">DME & Healthcare Operations</option>
+                      <option value="CRM & Pipeline Operations">CRM & Pipeline Operations</option>
                       <option value="Design">UI/UX Design</option>
                       <option value="Other">Other</option>
                     </select>

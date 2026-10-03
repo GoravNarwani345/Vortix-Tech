@@ -48,4 +48,21 @@ describe("Settings Module", () => {
     const key = await getSetting("GEMINI_API_KEY");
     expect(key).toBe("real_secret_key_12345");
   });
+
+  it("should update and retrieve hero customization settings", async () => {
+    await updateSettings({
+      HERO_BADGE: "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM",
+      HERO_TITLE_PREFIX: "We Build",
+      HERO_TITLE_ACCENT: "Digital Systems",
+      HERO_TITLE_SUFFIX: "That Drive Real Growth",
+      HERO_ROTATING_WORDS: "Full-Stack Web & Mobile Apps, AI Agents, DME Healthcare Operations",
+      HERO_PRIMARY_CTA: "Get a Quote",
+    });
+
+    expect(await getSetting("HERO_TITLE_ACCENT")).toBe("Digital Systems");
+    expect(await getSetting("HERO_PRIMARY_CTA")).toBe("Get a Quote");
+    expect(await getSetting("HERO_BADGE")).toBe(
+      "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM"
+    );
+  });
 });

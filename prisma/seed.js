@@ -262,6 +262,23 @@ async function main() {
       order: 9,
       isPublished: true,
     },
+    {
+      title: "CRM Management & Pipeline Operations",
+      slug: "crm-pipeline-operations",
+      category: "AI & Automation",
+      description: "Complete CRM administration, lead pipeline tracking, data hygiene, and automated follow-up workflows across GoHighLevel, HubSpot, Salesforce, and custom platforms.",
+      features: [
+        "Multi-platform administration (GHL, HubSpot, Zoho, Salesforce)",
+        "Automated lead nurture sequences & instant triggers",
+        "Deal pipeline tracking & database hygiene",
+        "Webhook integrations & KPI reporting dashboards",
+      ],
+      icon: "Database",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      order: 10,
+      isPublished: true,
+    },
   ];
 
   for (const svc of services) {

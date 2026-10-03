@@ -31,6 +31,12 @@ import {
   EyeOff,
   AlertCircle,
   Hash,
+  ClipboardCheck,
+  HeartPulse,
+  Activity,
+  Briefcase,
+  BarChart3,
+  Users,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { slugify } from "@/lib/utils";
@@ -53,6 +59,12 @@ export const AVAILABLE_ICONS: Record<string, React.ComponentType<{ size?: number
   Sparkles,
   Code,
   Zap,
+  ClipboardCheck,
+  HeartPulse,
+  Activity,
+  Briefcase,
+  BarChart3,
+  Users,
 };
 
 export const COLOR_PRESETS = [
@@ -61,6 +73,7 @@ export const COLOR_PRESETS = [
   { label: "Orange", bg: "bg-orange-50", text: "text-orange-500", border: "border-orange-200" },
   { label: "Purple", bg: "bg-purple-50", text: "text-purple-500", border: "border-purple-200" },
   { label: "Green", bg: "bg-emerald-50", text: "text-emerald-500", border: "border-emerald-200" },
+  { label: "Teal", bg: "bg-teal-50", text: "text-teal-600", border: "border-teal-200" },
   { label: "Rose", bg: "bg-rose-50", text: "text-rose-500", border: "border-rose-200" },
   { label: "Indigo", bg: "bg-indigo-50", text: "text-indigo-500", border: "border-indigo-200" },
   { label: "Sky", bg: "bg-sky-50", text: "text-sky-500", border: "border-sky-200" },

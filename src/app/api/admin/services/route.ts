@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { isAuthenticated } from "@/lib/auth";
 import { syncAiKnowledge } from "@/lib/aiKnowledge";
 import { slugify } from "@/lib/utils";
+import { ensureSeedData } from "@/lib/seedData";
 
 export async function GET() {
   if (!(await isAuthenticated())) {
@@ -10,6 +11,7 @@ export async function GET() {
   }
 
   try {
+    await ensureSeedData();
     const services = await prisma.service.findMany({
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     });

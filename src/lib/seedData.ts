@@ -220,6 +220,23 @@ export const DEFAULT_SERVICES: DefaultService[] = [
     order: 9,
     isPublished: true,
   },
+  {
+    title: "CRM Management & Pipeline Operations",
+    slug: "crm-pipeline-operations",
+    category: "AI & Automation",
+    description: "Complete CRM administration, lead pipeline tracking, data hygiene, and automated follow-up workflows across GoHighLevel, HubSpot, Salesforce, and custom platforms.",
+    features: [
+      "Multi-platform administration (GHL, HubSpot, Zoho, Salesforce)",
+      "Automated lead nurture sequences & instant triggers",
+      "Deal pipeline tracking & database hygiene",
+      "Webhook integrations & KPI reporting dashboards",
+    ],
+    icon: "Database",
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    order: 10,
+    isPublished: true,
+  },
 ];
 
 /**
@@ -228,29 +245,29 @@ export const DEFAULT_SERVICES: DefaultService[] = [
  */
 export async function ensureSeedData() {
   try {
-    // 1. Check & Seed Categories
+    // 1. Check & Seed Categories (idempotent upsert)
     // @ts-ignore in case client is not yet regenerated in local environment
     if (prisma.category) {
-      // @ts-ignore
-      const count = await prisma.category.count();
-      if (count === 0) {
-        for (const cat of DEFAULT_CATEGORIES) {
-          // @ts-ignore
-          await prisma.category.create({ data: cat });
-        }
+      for (const cat of DEFAULT_CATEGORIES) {
+        // @ts-ignore
+        await prisma.category.upsert({
+          where: { slug: cat.slug },
+          update: {},
+          create: cat,
+        });
       }
     }
 
-    // 2. Check & Seed Services
+    // 2. Check & Seed Services (idempotent upsert)
     // @ts-ignore
     if (prisma.service) {
-      // @ts-ignore
-      const count = await prisma.service.count();
-      if (count === 0) {
-        for (const svc of DEFAULT_SERVICES) {
-          // @ts-ignore
-          await prisma.service.create({ data: svc });
-        }
+      for (const svc of DEFAULT_SERVICES) {
+        // @ts-ignore
+        await prisma.service.upsert({
+          where: { slug: svc.slug },
+          update: {},
+          create: svc,
+        });
       }
     }
   } catch (error) {

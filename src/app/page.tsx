@@ -1,5 +1,6 @@
 import Hero from "@/components/home/Hero";
 import ServicesPreview from "@/components/home/ServicesPreview";
+import IndustriesWeServe from "@/components/home/IndustriesWeServe";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
 import TechStack from "@/components/home/TechStack";
 import Testimonials from "@/components/home/Testimonials";
@@ -47,6 +48,7 @@ export default async function HomePage() {
     <>
       <Hero />
       <ServicesPreview />
+      <IndustriesWeServe />
       <WhyChooseUs initialStats={stats} />
       <TechStack />
       <Testimonials testimonials={testimonials} />
@@ -54,3 +56,4 @@ export default async function HomePage() {
     </>
   );
 }
+

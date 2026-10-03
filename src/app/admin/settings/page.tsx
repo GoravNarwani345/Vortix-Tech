@@ -62,6 +62,15 @@ type SettingsData = {
   statsHappyClients?: number | null;
   statsTechnologies?: number | null;
   statsTeamMembers?: number | null;
+  heroBadge?: string;
+  heroTitlePrefix?: string;
+  heroTitleAccent?: string;
+  heroTitleSuffix?: string;
+  heroSubtitlePrefix?: string;
+  heroRotatingWords?: string;
+  heroDescription?: string;
+  heroPrimaryCta?: string;
+  heroSecondaryCta?: string;
 };
 
 type KnowledgeBreakdown = {
@@ -105,7 +114,7 @@ type AuditData = {
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<
-    "auth" | "ai" | "audit" | "cron" | "stats"
+    "auth" | "ai" | "audit" | "cron" | "stats" | "hero"
   >("audit");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -117,6 +126,21 @@ export default function AdminSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Hero & Homepage customization states (no emojis)
+  const [heroBadge, setHeroBadge] = useState("Full-Stack Engineering · AI Automation · Healthcare Operations · CRM");
+  const [heroTitlePrefix, setHeroTitlePrefix] = useState("We Build");
+  const [heroTitleAccent, setHeroTitleAccent] = useState("Digital Systems");
+  const [heroTitleSuffix, setHeroTitleSuffix] = useState("That Drive Real Growth");
+  const [heroSubtitlePrefix, setHeroSubtitlePrefix] = useState("We engineer powerful");
+  const [heroRotatingWords, setHeroRotatingWords] = useState(
+    "Full-Stack Web & Mobile Apps, AI Agents & Autonomous Workflows, DME & Healthcare Operations, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & Scalable APIs"
+  );
+  const [heroDescription, setHeroDescription] = useState(
+    "From high-performance web applications and AI automations to end-to-end healthcare operations and CRM pipeline management, Vortix Tech builds the digital infrastructure that scales your business."
+  );
+  const [heroPrimaryCta, setHeroPrimaryCta] = useState("Get a Quote");
+  const [heroSecondaryCta, setHeroSecondaryCta] = useState("Explore Services");
 
   // AI & API states
   const [geminiApiKey, setGeminiApiKey] = useState("");
@@ -183,6 +207,15 @@ export default function AdminSettingsPage() {
         setStatsHappyClients(typeof s.statsHappyClients === "number" ? s.statsHappyClients : "");
         setStatsTechnologies(typeof s.statsTechnologies === "number" ? s.statsTechnologies : "");
         setStatsTeamMembers(typeof s.statsTeamMembers === "number" ? s.statsTeamMembers : "");
+        if (s.heroBadge) setHeroBadge(s.heroBadge);
+        if (s.heroTitlePrefix) setHeroTitlePrefix(s.heroTitlePrefix);
+        if (s.heroTitleAccent) setHeroTitleAccent(s.heroTitleAccent);
+        if (s.heroTitleSuffix) setHeroTitleSuffix(s.heroTitleSuffix);
+        if (s.heroSubtitlePrefix) setHeroSubtitlePrefix(s.heroSubtitlePrefix);
+        if (s.heroRotatingWords) setHeroRotatingWords(s.heroRotatingWords);
+        if (s.heroDescription) setHeroDescription(s.heroDescription);
+        if (s.heroPrimaryCta) setHeroPrimaryCta(s.heroPrimaryCta);
+        if (s.heroSecondaryCta) setHeroSecondaryCta(s.heroSecondaryCta);
 
         try {
           const statsRes = await fetch("/api/stats");
@@ -250,6 +283,15 @@ export default function AdminSettingsPage() {
         statsHappyClients: statsHappyClients === "" ? null : Number(statsHappyClients),
         statsTechnologies: statsTechnologies === "" ? null : Number(statsTechnologies),
         statsTeamMembers: statsTeamMembers === "" ? null : Number(statsTeamMembers),
+        heroBadge,
+        heroTitlePrefix,
+        heroTitleAccent,
+        heroTitleSuffix,
+        heroSubtitlePrefix,
+        heroRotatingWords,
+        heroDescription,
+        heroPrimaryCta,
+        heroSecondaryCta,
       };
 
       if (newPassword) payload.adminPassword = newPassword;
@@ -432,6 +474,17 @@ export default function AdminSettingsPage() {
         >
           <BarChart3 size={18} />
           Company Showcase & Stats
+        </button>
+        <button
+          onClick={() => setActiveTab("hero")}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
+            activeTab === "hero"
+              ? "bg-accent text-white shadow-sm"
+              : "text-foreground-muted hover:text-foreground hover:bg-card-bg"
+          }`}
+        >
+          <Layers size={18} />
+          Hero & Homepage
         </button>
       </div>
 
@@ -1533,6 +1586,269 @@ export default function AdminSettingsPage() {
                   >
                     {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                     Save Showcase Metrics
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: HERO & HOMEPAGE SETTINGS */}
+          {activeTab === "hero" && (
+            <div className="space-y-8">
+              {/* Header card */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                      <Layers className="text-accent" size={22} />
+                      Hero & Homepage Management
+                    </h2>
+                    <p className="text-sm text-foreground-muted mt-1">
+                      Customize the hero headline, rotating capabilities, value proposition, and call-to-action buttons.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHeroBadge("Full-Stack Engineering · AI Automation · Healthcare Operations · CRM");
+                        setHeroTitlePrefix("We Build");
+                        setHeroTitleAccent("Digital Systems");
+                        setHeroTitleSuffix("That Drive Real Growth");
+                        setHeroSubtitlePrefix("We engineer powerful");
+                        setHeroRotatingWords(
+                          "Full-Stack Web & Mobile Apps, AI Agents & Autonomous Workflows, DME & Healthcare Operations, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & Scalable APIs"
+                        );
+                        setHeroDescription(
+                          "From high-performance web applications and AI automations to end-to-end healthcare operations and CRM pipeline management, Vortix Tech builds the digital infrastructure that scales your business."
+                        );
+                        setHeroPrimaryCta("Get a Quote");
+                        setHeroSecondaryCta("Explore Services");
+                        toast.success("Hero defaults restored. Click 'Save Hero Settings' to apply.");
+                      }}
+                      className="px-4 py-2 bg-background border border-card-border hover:bg-card-bg text-foreground-muted hover:text-foreground text-xs font-medium rounded-xl transition-all"
+                    >
+                      Reset Defaults
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveSettings()}
+                      disabled={saving}
+                      className="px-5 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-medium rounded-xl transition-all shadow-sm flex items-center gap-2"
+                    >
+                      {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                      Save Hero Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-background border-2 border-accent/20 shadow-inner relative overflow-hidden">
+                <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[11px] font-semibold tracking-wider uppercase">
+                  Live Preview
+                </div>
+                <div className="max-w-2xl mx-auto text-center py-4">
+                  {/* Badge Preview */}
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-card-border bg-card-bg text-foreground text-xs font-medium mb-5 shadow-xs">
+                    <Sparkles size={12} className="text-accent" />
+                    <span>{heroBadge || "Badge Text"}</span>
+                  </div>
+
+                  {/* Heading Preview */}
+                  <h3 className="text-2xl sm:text-4xl font-serif font-bold text-foreground mb-3 leading-tight">
+                    {heroTitlePrefix || "We Build"}{" "}
+                    <span className="text-accent">{heroTitleAccent || "Digital Systems"}</span>
+                    <br />
+                    {heroTitleSuffix || "That Drive Real Growth"}
+                  </h3>
+
+                  {/* Subtitle Preview */}
+                  <div className="text-sm sm:text-base text-foreground-muted mb-4 font-medium">
+                    <span>{heroSubtitlePrefix || "We engineer powerful"} </span>
+                    <span className="text-accent font-semibold">
+                      {heroRotatingWords.split(",")[0]?.trim() || "Full-Stack Web & Mobile Apps"}
+                    </span>
+                  </div>
+
+                  {/* Description Preview */}
+                  <p className="text-xs sm:text-sm text-foreground-muted max-w-xl mx-auto mb-6 leading-relaxed">
+                    {heroDescription || "Your company description will appear here..."}
+                  </p>
+
+                  {/* CTA Buttons Preview */}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="px-5 py-2.5 bg-gray-900 text-white rounded-full text-xs font-semibold shadow-sm">
+                      {heroPrimaryCta || "Get a Quote"}
+                    </div>
+                    <div className="px-5 py-2.5 bg-card-bg border border-card-border text-foreground rounded-full text-xs font-semibold shadow-xs">
+                      {heroSecondaryCta || "Explore Services"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Controls */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                    Hero Top Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={heroBadge}
+                    onChange={(e) => setHeroBadge(e.target.value)}
+                    placeholder="e.g. Full-Stack Engineering · AI Automation · Healthcare Operations · CRM"
+                    className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                  />
+                  <p className="text-xs text-foreground-muted mt-1.5">
+                    Displayed inside the pill badge right above the main title.
+                  </p>
+                </div>
+
+                {/* Main Headline (Prefix, Highlight Word, Suffix) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Title Prefix
+                    </label>
+                    <input
+                      type="text"
+                      value={heroTitlePrefix}
+                      onChange={(e) => setHeroTitlePrefix(e.target.value)}
+                      placeholder="e.g. We Build"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Title Highlight Word (Accent Color)
+                    </label>
+                    <input
+                      type="text"
+                      value={heroTitleAccent}
+                      onChange={(e) => setHeroTitleAccent(e.target.value)}
+                      placeholder="e.g. Digital Systems"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Title Suffix (Second Line)
+                    </label>
+                    <input
+                      type="text"
+                      value={heroTitleSuffix}
+                      onChange={(e) => setHeroTitleSuffix(e.target.value)}
+                      placeholder="e.g. That Drive Real Growth"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                {/* Subtitle & Rotating Keywords */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Subtitle Lead Text
+                    </label>
+                    <input
+                      type="text"
+                      value={heroSubtitlePrefix}
+                      onChange={(e) => setHeroSubtitlePrefix(e.target.value)}
+                      placeholder="e.g. We engineer powerful"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Rotating Capability Keywords (Comma-Separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={heroRotatingWords}
+                      onChange={(e) => setHeroRotatingWords(e.target.value)}
+                      placeholder="Full-Stack Web & Mobile Apps, AI Agents, DME Healthcare Operations, CRM Pipelines"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent font-mono text-xs"
+                    />
+                    <p className="text-xs text-foreground-muted mt-1.5">
+                      Separate each rotating phrase with a comma. These rotate automatically on the hero.
+                    </p>
+
+                    {/* Chips Preview */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {heroRotatingWords
+                        .split(",")
+                        .map((w) => w.trim())
+                        .filter(Boolean)
+                        .map((word, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-lg text-xs font-medium bg-background border border-card-border text-foreground"
+                          >
+                            {word}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                    Hero Description Paragraph
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={heroDescription}
+                    onChange={(e) => setHeroDescription(e.target.value)}
+                    placeholder="Enter hero paragraph describing what Vortix Tech delivers..."
+                    className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent resize-none leading-relaxed"
+                  />
+                </div>
+
+                {/* CTAs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Primary CTA Button Text
+                    </label>
+                    <input
+                      type="text"
+                      value={heroPrimaryCta}
+                      onChange={(e) => setHeroPrimaryCta(e.target.value)}
+                      placeholder="Get a Quote"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Secondary CTA Button Text
+                    </label>
+                    <input
+                      type="text"
+                      value={heroSecondaryCta}
+                      onChange={(e) => setHeroSecondaryCta(e.target.value)}
+                      placeholder="Explore Services"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                {/* Save Footer */}
+                <div className="pt-6 border-t border-card-border mt-8 flex items-center justify-between">
+                  <div className="text-xs text-foreground-muted">
+                    Saved values synchronize to the landing page and the AI knowledge system automatically.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveSettings()}
+                    disabled={saving}
+                    className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-white font-medium text-sm rounded-xl transition-all shadow-sm flex items-center gap-2"
+                  >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    Save Hero Settings
                   </button>
                 </div>
               </div>

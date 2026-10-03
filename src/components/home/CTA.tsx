@@ -34,9 +34,9 @@ export default function CTA() {
             </h2>
 
             <p className="text-gray-600 text-lg sm:text-xl mb-10 max-w-2xl leading-relaxed">
-              Whether you need a full-stack web application, a mobile app, or
-              custom AI automation, our team is ready to turn your vision into
-              reality.
+              Whether you need a production-grade web application, AI-powered
+              automation, CRM pipeline management, or healthcare operations
+              support — our team is ready to deliver.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">

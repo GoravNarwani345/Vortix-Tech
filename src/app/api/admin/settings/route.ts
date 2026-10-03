@@ -53,6 +53,15 @@ export async function GET() {
       statsHappyClients: stored.STATS_HAPPY_CLIENTS ?? null,
       statsTechnologies: stored.STATS_TECHNOLOGIES ?? null,
       statsTeamMembers: stored.STATS_TEAM_MEMBERS ?? null,
+      heroBadge: stored.HERO_BADGE || "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM",
+      heroTitlePrefix: stored.HERO_TITLE_PREFIX || "We Build",
+      heroTitleAccent: stored.HERO_TITLE_ACCENT || "Digital Systems",
+      heroTitleSuffix: stored.HERO_TITLE_SUFFIX || "That Drive Real Growth",
+      heroSubtitlePrefix: stored.HERO_SUBTITLE_PREFIX || "We engineer powerful",
+      heroRotatingWords: stored.HERO_ROTATING_WORDS || "AI Agents & Autonomous Workflows, Full-Stack Web & Mobile Apps, DME & Healthcare Operations, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & APIs",
+      heroDescription: stored.HERO_DESCRIPTION || "From modern web applications and AI-powered automation to specialized healthcare operations and CRM pipeline management, Vortix Tech engineers the end-to-end digital infrastructure that scales your business.",
+      heroPrimaryCta: stored.HERO_PRIMARY_CTA || "Get a Quote",
+      heroSecondaryCta: stored.HERO_SECONDARY_CTA || "Explore Services",
     };
 
     return NextResponse.json({ success: true, settings: publicSettings });
@@ -159,6 +168,16 @@ export async function POST(req: Request) {
       const val = Number(body.statsTeamMembers);
       updates.STATS_TEAM_MEMBERS = isNaN(val) || val <= 0 ? undefined : val;
     }
+
+    if (typeof body.heroBadge === "string") updates.HERO_BADGE = body.heroBadge.trim();
+    if (typeof body.heroTitlePrefix === "string") updates.HERO_TITLE_PREFIX = body.heroTitlePrefix.trim();
+    if (typeof body.heroTitleAccent === "string") updates.HERO_TITLE_ACCENT = body.heroTitleAccent.trim();
+    if (typeof body.heroTitleSuffix === "string") updates.HERO_TITLE_SUFFIX = body.heroTitleSuffix.trim();
+    if (typeof body.heroSubtitlePrefix === "string") updates.HERO_SUBTITLE_PREFIX = body.heroSubtitlePrefix.trim();
+    if (typeof body.heroRotatingWords === "string") updates.HERO_ROTATING_WORDS = body.heroRotatingWords.trim();
+    if (typeof body.heroDescription === "string") updates.HERO_DESCRIPTION = body.heroDescription.trim();
+    if (typeof body.heroPrimaryCta === "string") updates.HERO_PRIMARY_CTA = body.heroPrimaryCta.trim();
+    if (typeof body.heroSecondaryCta === "string") updates.HERO_SECONDARY_CTA = body.heroSecondaryCta.trim();
 
     await updateSettings(updates);
 

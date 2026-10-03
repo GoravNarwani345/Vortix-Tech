@@ -13,6 +13,7 @@ import {
   PenTool,
   Cloud,
   ClipboardCheck,
+  Database,
 } from "lucide-react";
 
 const services = [
@@ -97,6 +98,15 @@ const services = [
     iconBg: "bg-teal-50",
     iconColor: "text-teal-600",
   },
+  {
+    icon: Database,
+    title: "CRM & Pipeline Operations",
+    description:
+      "Complete CRM administration, pipeline tracking, and automated lead follow-up workflows.",
+    slug: "crm-pipeline-operations",
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+  },
 ];
 
 const ICON_LOOKUP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -109,6 +119,7 @@ const ICON_LOOKUP: Record<string, React.ComponentType<{ size?: number; className
   PenTool,
   Cloud,
   ClipboardCheck,
+  Database,
 };
 
 const containerVariants: Variants = {
