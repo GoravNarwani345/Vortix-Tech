@@ -21,6 +21,7 @@ import {
   Zap,
   ArrowRight,
   CheckCircle,
+  ClipboardCheck,
 } from "lucide-react";
 import { useContactModal } from "@/components/layout/ContactModalContext";
 import { DEFAULT_SERVICES } from "@/lib/seedData";
@@ -42,6 +43,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
   Sparkles,
   Code,
   Zap,
+  ClipboardCheck,
 };
 
 type ServiceItem = {
@@ -61,6 +63,7 @@ export default function ServicesContent() {
     "Development",
     "AI & Automation",
     "Design & Cloud",
+    "Healthcare Operations",
   ]);
   const [servicesList, setServicesList] = useState<ServiceItem[]>(DEFAULT_SERVICES as any);
   const [activeCategory, setActiveCategory] = useState("All");

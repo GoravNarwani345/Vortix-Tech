@@ -12,6 +12,7 @@ const rotatingWords = [
   "n8n Automations",
   "ComfyUI Workflows",
   "LLM Solutions",
+  "Healthcare & DME Pipelines",
   "AI Agents",
 ];
 
@@ -87,8 +88,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-gray-600 text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          From AI-powered solutions to custom automation workflows, we deliver
-          cutting-edge technology that scales your business and drives results.
+          From AI-powered platforms and full-stack software to healthcare operations and workflow automations, we deliver cutting-edge digital solutions that scale your business.
         </motion.p>
 
         {/* CTAs */}

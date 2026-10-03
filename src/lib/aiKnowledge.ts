@@ -98,6 +98,11 @@ const CORE_SERVICES = [
     stack: "Docker, AWS, Cloudflare, Linux VPS, CI/CD pipelines",
     description: "High-concurrency microservices, database architecture, automated deployment pipelines, SSL/security hardening.",
   },
+  {
+    title: "Healthcare BPO & DME Order Processing",
+    stack: "Brightree, Availity, Waystar, HIPAA Compliance, Prior Authorizations, EHR/EMR",
+    description: "End-to-end DME order intake, insurance eligibility verification, doctor paperwork & CMN retrieval, prior authorizations, and claims processing.",
+  },
 ];
 
 async function ensureDataDir() {

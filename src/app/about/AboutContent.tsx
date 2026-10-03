@@ -30,6 +30,7 @@ const values = [
   },
 ];
 
+/*
 const team = [
   {
     name: "Gorav Narwani",
@@ -50,12 +51,13 @@ const team = [
     initials: "RM",
   },
 ];
+*/
 
 const timeline = [
   {
     year: "2024",
     title: "Vortix Tech Founded",
-    description: "Three developers with a shared vision — build AI-powered software that gives businesses an unfair advantage.",
+    description: "Founded with a shared vision — build high-performance software and AI systems that give businesses an unfair advantage.",
   },
   {
     year: "2024",
@@ -69,8 +71,8 @@ const timeline = [
   },
   {
     year: "2026",
-    title: "Building in Public",
-    description: "Launching on freelance platforms and scaling our team to take on bigger projects.",
+    title: "Scaling & Operations Expansion",
+    description: "Expanding into specialized healthcare operations, DME processing, and enterprise digital solutions.",
   },
 ];
 
@@ -92,7 +94,7 @@ export default function AboutContent() {
               About Us
             </span>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-serif font-bold text-gray-900 mt-6 mb-8 leading-[1.1]">
-              The Team Behind <br className="hidden sm:block" />
+              The Story Behind <br className="hidden sm:block" />
               <span className="text-accent">Vortix Tech</span>
             </h1>
             <p className="text-gray-600 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
@@ -198,7 +200,7 @@ export default function AboutContent() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Team Section (Temporarily commented out)
       <section className="relative overflow-hidden bg-white py-24 sm:py-32 border-y border-gray-100">
         <div className="relative z-10 container-custom">
           <motion.div
@@ -245,6 +247,7 @@ export default function AboutContent() {
           </div>
         </div>
       </section>
+      */}
 
       {/* Timeline */}
       <section className="relative overflow-hidden bg-background py-24 sm:py-32">

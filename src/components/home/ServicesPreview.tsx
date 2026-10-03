@@ -12,6 +12,7 @@ import {
   Link2,
   PenTool,
   Cloud,
+  ClipboardCheck,
 } from "lucide-react";
 
 const services = [
@@ -87,6 +88,15 @@ const services = [
     iconBg: "bg-sky-50",
     iconColor: "text-sky-500",
   },
+  {
+    icon: ClipboardCheck,
+    title: "DME & Healthcare Processing",
+    description:
+      "End-to-end DME order processing, insurance eligibility verification, and prior authorizations.",
+    slug: "dme-healthcare-processing",
+    iconBg: "bg-teal-50",
+    iconColor: "text-teal-600",
+  },
 ];
 
 const ICON_LOOKUP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -98,6 +108,7 @@ const ICON_LOOKUP: Record<string, React.ComponentType<{ size?: number; className
   Link2,
   PenTool,
   Cloud,
+  ClipboardCheck,
 };
 
 const containerVariants: Variants = {
@@ -122,7 +133,7 @@ export default function ServicesPreview() {
         const json = await res.json();
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
           setLiveServices(
-            json.data.slice(0, 8).map((s: any) => ({
+            json.data.slice(0, 12).map((s: any) => ({
               ...s,
               icon: typeof s.icon === "string" ? ICON_LOOKUP[s.icon] || Globe : s.icon || Globe,
             }))

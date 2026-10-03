@@ -91,9 +91,8 @@ export default function WhyChooseUs({ initialStats }: { initialStats?: StatItem[
               A partner you can rely on to scale
             </h2>
             <p className="text-gray-600 text-lg mb-10 leading-relaxed">
-              We don&apos;t just write code; we build digital businesses. 
-              Our team of experts combines deep technical knowledge with strategic 
-              thinking to deliver solutions that give you a competitive edge.
+              We don&apos;t just write code; we build digital businesses and streamline mission-critical operations. 
+              Our team combines deep technical engineering with operational domain expertise to deliver solutions that give you a competitive edge.
             </p>
 
             <div className="space-y-8">

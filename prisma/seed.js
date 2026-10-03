@@ -77,18 +77,25 @@ async function main() {
       order: 3,
     },
     {
+      name: "Healthcare Operations",
+      slug: "healthcare-operations",
+      description: "DME order processing, insurance verification, medical billing, and clinical workflow support.",
+      scope: "ALL",
+      order: 4,
+    },
+    {
       name: "Web App",
       slug: "web-app",
       description: "Modern responsive web applications built with Next.js and React.",
       scope: "PORTFOLIO",
-      order: 4,
+      order: 5,
     },
     {
       name: "Mobile App",
       slug: "mobile-app",
       description: "Native-quality mobile applications for iOS & Android with React Native.",
       scope: "PORTFOLIO",
-      order: 5,
+      order: 6,
     },
   ];
 
@@ -236,6 +243,23 @@ async function main() {
       iconBg: "bg-sky-50",
       iconColor: "text-sky-500",
       order: 8,
+      isPublished: true,
+    },
+    {
+      title: "DME & Healthcare Processing",
+      slug: "dme-healthcare-processing",
+      category: "Healthcare Operations",
+      description: "End-to-end DME order processing, insurance verification, doctor paperwork collection, and prior authorization workflows.",
+      features: [
+        "Insurance verification & eligibility checking",
+        "Doctor paperwork & CMN collection",
+        "Prior authorization (PA) management",
+        "Billing & EHR order processing (Brightree)",
+      ],
+      icon: "ClipboardCheck",
+      iconBg: "bg-teal-50",
+      iconColor: "text-teal-600",
+      order: 9,
       isPublished: true,
     },
   ];
