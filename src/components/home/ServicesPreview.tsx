@@ -90,15 +90,6 @@ const services = [
     iconColor: "text-sky-500",
   },
   {
-    icon: ClipboardCheck,
-    title: "DME & Healthcare Processing",
-    description:
-      "End-to-end DME order processing, insurance eligibility verification, and prior authorizations.",
-    slug: "dme-healthcare-processing",
-    iconBg: "bg-teal-50",
-    iconColor: "text-teal-600",
-  },
-  {
     icon: Database,
     title: "CRM & Pipeline Operations",
     description:

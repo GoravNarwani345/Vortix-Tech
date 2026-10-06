@@ -7,7 +7,7 @@ import {
   Sparkles,
   Code2,
   Bot,
-  HeartPulse,
+  Database,
   ShieldCheck,
   Zap,
   Activity,
@@ -29,7 +29,7 @@ type HeroData = {
 };
 
 const DEFAULT_HERO: HeroData = {
-  badge: "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM",
+  badge: "Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems",
   titlePrefix: "We Build",
   titleAccent: "Digital Systems",
   titleSuffix: "That Drive Real Growth",
@@ -37,13 +37,12 @@ const DEFAULT_HERO: HeroData = {
   rotatingWords: [
     "Full-Stack Web & Mobile Apps",
     "AI Agents & Autonomous Workflows",
-    "DME & Healthcare Operations",
     "CRM Pipeline Automations",
     "Enterprise n8n & ComfyUI Systems",
     "Cloud Architecture & Scalable APIs",
   ],
   description:
-    "From high-performance web applications and AI automations to end-to-end healthcare operations and CRM pipeline management, Vortix Tech builds the digital infrastructure that scales your business.",
+    "From high-performance web applications and AI automations to end-to-end CRM pipeline management and cloud infrastructure, Vortix Tech builds the digital infrastructure that scales your business.",
   primaryCta: "Get a Quote",
   secondaryCta: "Explore Services",
 };
@@ -70,14 +69,14 @@ const PILLARS = [
     href: "/services?category=AI+%26+Automation",
   },
   {
-    icon: HeartPulse,
-    title: "Healthcare Ops & CRM",
-    subtitle: "DME, PA & Pipeline Ops",
-    tags: ["DME Intake", "Insurance PA", "Brightree", "GHL CRM"],
-    iconBg: "bg-teal-50",
-    iconColor: "text-teal-600",
-    hoverBorder: "hover:border-teal-300",
-    href: "/services?category=Healthcare+Operations",
+    icon: Database,
+    title: "CRM & Pipeline Ops",
+    subtitle: "Lead Funnels, Sync & Workflows",
+    tags: ["GoHighLevel", "HubSpot", "Salesforce", "Lead Nurture"],
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    hoverBorder: "hover:border-emerald-300",
+    href: "/services?category=CRM+%26+Operations",
   },
 ];
 
@@ -271,7 +270,7 @@ export default function Hero() {
         >
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-accent shrink-0" />
-            <span>HIPAA-Ready Protocols & Data Privacy</span>
+            <span>Enterprise-Grade Security & Privacy</span>
           </div>
           <div className="flex items-center gap-2">
             <Zap size={16} className="text-emerald-500 shrink-0" />

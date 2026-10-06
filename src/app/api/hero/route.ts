@@ -11,7 +11,7 @@ export async function GET() {
       hero: {
         badge:
           stored.HERO_BADGE ||
-          "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM",
+          "Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems",
         titlePrefix: stored.HERO_TITLE_PREFIX || "We Build",
         titleAccent: stored.HERO_TITLE_ACCENT || "Digital Systems",
         titleSuffix: stored.HERO_TITLE_SUFFIX || "That Drive Real Growth",
@@ -21,14 +21,13 @@ export async function GET() {
           : [
               "AI Agents & Autonomous Workflows",
               "Full-Stack Web & Mobile Apps",
-              "DME & Healthcare Operations",
               "CRM Pipeline Automations",
               "Enterprise n8n & ComfyUI Systems",
               "Cloud Infrastructure & APIs",
             ],
         description:
           stored.HERO_DESCRIPTION ||
-          "From modern web applications and AI-powered automation to specialized healthcare operations and CRM pipeline management, Vortix Tech engineers the end-to-end digital infrastructure that scales your business.",
+          "From modern web applications and AI-powered automation to end-to-end CRM pipeline management and cloud infrastructure, Vortix Tech engineers the digital infrastructure that scales your business.",
         primaryCta: stored.HERO_PRIMARY_CTA || "Get a Quote",
         secondaryCta: stored.HERO_SECONDARY_CTA || "Explore Services",
       },

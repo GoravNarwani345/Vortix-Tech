@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Code2,
   Cpu,
-  HeartPulse,
+  Database,
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
@@ -48,22 +48,22 @@ const verticals = [
     borderHover: "hover:border-purple-300",
   },
   {
-    icon: HeartPulse,
-    title: "Healthcare Operations",
-    tagline: "DME, Insurance & Medical BPO",
+    icon: Database,
+    title: "CRM & Pipeline Operations",
+    tagline: "Lead Funnels, Sync & Workflows",
     description:
-      "Specialized teams for US healthcare companies — handling DME order processing, insurance eligibility verification, prior authorizations, doctor paperwork collection, and EHR/billing operations.",
+      "Complete CRM administration, multi-platform setup, automated lead follow-ups, and revenue pipeline operations across GoHighLevel, HubSpot, Salesforce, and custom CRMs.",
     capabilities: [
-      "DME order intake & processing",
-      "Insurance verification & eligibility",
-      "Prior authorization (PA) management",
-      "Doctor paperwork & CMN collection",
-      "Brightree & EHR billing systems",
+      "GoHighLevel & HubSpot CRM administration",
+      "Lead nurture sequences & instant follow-ups",
+      "Deal pipeline tracking & database hygiene",
+      "Webhook integrations & custom triggers",
+      "Automated KPI dashboards & revenue analytics",
     ],
-    accentColor: "bg-teal-500",
-    iconBg: "bg-teal-50",
-    iconColor: "text-teal-600",
-    borderHover: "hover:border-teal-300",
+    accentColor: "bg-emerald-500",
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    borderHover: "hover:border-emerald-300",
   },
 ];
 
@@ -109,7 +109,7 @@ export default function IndustriesWeServe() {
           <div className="w-20 h-1 bg-gray-900 mx-auto rounded-full mb-6" />
           <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
             We bring together software engineering, intelligent automation, and
-            specialized healthcare operations under one roof — so you get a
+            end-to-end CRM pipeline operations under one roof — so you get a
             single partner for every digital need.
           </p>
         </motion.div>

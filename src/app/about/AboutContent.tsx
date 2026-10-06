@@ -72,7 +72,7 @@ const timeline = [
   {
     year: "2026",
     title: "Scaling & Operations Expansion",
-    description: "Expanding into specialized healthcare operations, DME processing, and enterprise digital solutions.",
+    description: "Expanding into advanced AI workflow automations, CRM operations, and enterprise digital solutions.",
   },
 ];
 

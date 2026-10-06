@@ -63,7 +63,7 @@ export default function ServicesContent() {
     "Development",
     "AI & Automation",
     "Design & Cloud",
-    "Healthcare Operations",
+    "CRM & Operations",
   ]);
   const [servicesList, setServicesList] = useState<ServiceItem[]>(DEFAULT_SERVICES as any);
   const [activeCategory, setActiveCategory] = useState("All");

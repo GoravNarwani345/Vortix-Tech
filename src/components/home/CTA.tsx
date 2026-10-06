@@ -35,8 +35,8 @@ export default function CTA() {
 
             <p className="text-gray-600 text-lg sm:text-xl mb-10 max-w-2xl leading-relaxed">
               Whether you need a production-grade web application, AI-powered
-              automation, CRM pipeline management, or healthcare operations
-              support — our team is ready to deliver.
+              automation, or end-to-end CRM pipeline management — our team is
+              ready to deliver.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">

@@ -51,18 +51,18 @@ describe("Settings Module", () => {
 
   it("should update and retrieve hero customization settings", async () => {
     await updateSettings({
-      HERO_BADGE: "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM",
+      HERO_BADGE: "Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems",
       HERO_TITLE_PREFIX: "We Build",
       HERO_TITLE_ACCENT: "Digital Systems",
       HERO_TITLE_SUFFIX: "That Drive Real Growth",
-      HERO_ROTATING_WORDS: "Full-Stack Web & Mobile Apps, AI Agents, DME Healthcare Operations",
+      HERO_ROTATING_WORDS: "Full-Stack Web & Mobile Apps, AI Agents, CRM Pipelines",
       HERO_PRIMARY_CTA: "Get a Quote",
     });
 
     expect(await getSetting("HERO_TITLE_ACCENT")).toBe("Digital Systems");
     expect(await getSetting("HERO_PRIMARY_CTA")).toBe("Get a Quote");
     expect(await getSetting("HERO_BADGE")).toBe(
-      "Full-Stack Engineering · AI Automation · Healthcare Operations · CRM"
+      "Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems"
     );
   });
 });

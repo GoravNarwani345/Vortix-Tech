@@ -128,16 +128,16 @@ export default function AdminSettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   // Hero & Homepage customization states (no emojis)
-  const [heroBadge, setHeroBadge] = useState("Full-Stack Engineering · AI Automation · Healthcare Operations · CRM");
+  const [heroBadge, setHeroBadge] = useState("Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems");
   const [heroTitlePrefix, setHeroTitlePrefix] = useState("We Build");
   const [heroTitleAccent, setHeroTitleAccent] = useState("Digital Systems");
   const [heroTitleSuffix, setHeroTitleSuffix] = useState("That Drive Real Growth");
   const [heroSubtitlePrefix, setHeroSubtitlePrefix] = useState("We engineer powerful");
   const [heroRotatingWords, setHeroRotatingWords] = useState(
-    "Full-Stack Web & Mobile Apps, AI Agents & Autonomous Workflows, DME & Healthcare Operations, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & Scalable APIs"
+    "Full-Stack Web & Mobile Apps, AI Agents & Autonomous Workflows, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & Scalable APIs"
   );
   const [heroDescription, setHeroDescription] = useState(
-    "From high-performance web applications and AI automations to end-to-end healthcare operations and CRM pipeline management, Vortix Tech builds the digital infrastructure that scales your business."
+    "From high-performance web applications and AI automations to end-to-end CRM pipeline management and cloud infrastructure, Vortix Tech builds the digital infrastructure that scales your business."
   );
   const [heroPrimaryCta, setHeroPrimaryCta] = useState("Get a Quote");
   const [heroSecondaryCta, setHeroSecondaryCta] = useState("Explore Services");
@@ -1611,16 +1611,16 @@ export default function AdminSettingsPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setHeroBadge("Full-Stack Engineering · AI Automation · Healthcare Operations · CRM");
+                        setHeroBadge("Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems");
                         setHeroTitlePrefix("We Build");
                         setHeroTitleAccent("Digital Systems");
                         setHeroTitleSuffix("That Drive Real Growth");
                         setHeroSubtitlePrefix("We engineer powerful");
                         setHeroRotatingWords(
-                          "Full-Stack Web & Mobile Apps, AI Agents & Autonomous Workflows, DME & Healthcare Operations, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & Scalable APIs"
+                          "Full-Stack Web & Mobile Apps, AI Agents & Autonomous Workflows, CRM Pipeline Automations, Enterprise n8n & ComfyUI Systems, Cloud Architecture & Scalable APIs"
                         );
                         setHeroDescription(
-                          "From high-performance web applications and AI automations to end-to-end healthcare operations and CRM pipeline management, Vortix Tech builds the digital infrastructure that scales your business."
+                          "From high-performance web applications and AI automations to end-to-end CRM pipeline management and cloud infrastructure, Vortix Tech builds the digital infrastructure that scales your business."
                         );
                         setHeroPrimaryCta("Get a Quote");
                         setHeroSecondaryCta("Explore Services");
@@ -1698,7 +1698,7 @@ export default function AdminSettingsPage() {
                     type="text"
                     value={heroBadge}
                     onChange={(e) => setHeroBadge(e.target.value)}
-                    placeholder="e.g. Full-Stack Engineering · AI Automation · Healthcare Operations · CRM"
+                    placeholder="e.g. Full-Stack Engineering · AI Automation · CRM Pipelines · Cloud Systems"
                     className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
                   />
                   <p className="text-xs text-foreground-muted mt-1.5">
@@ -1769,7 +1769,7 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={heroRotatingWords}
                       onChange={(e) => setHeroRotatingWords(e.target.value)}
-                      placeholder="Full-Stack Web & Mobile Apps, AI Agents, DME Healthcare Operations, CRM Pipelines"
+                      placeholder="Full-Stack Web & Mobile Apps, AI Agents, CRM Pipelines, Cloud Architecture"
                       className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent font-mono text-xs"
                     />
                     <p className="text-xs text-foreground-muted mt-1.5">

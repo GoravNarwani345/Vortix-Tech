@@ -99,11 +99,6 @@ const CORE_SERVICES = [
     description: "High-concurrency microservices, database architecture, automated deployment pipelines, SSL/security hardening.",
   },
   {
-    title: "Healthcare BPO & DME Order Processing",
-    stack: "Brightree, Availity, Waystar, HIPAA Compliance, Prior Authorizations, EHR/EMR",
-    description: "End-to-end DME order intake, insurance eligibility verification, doctor paperwork & CMN retrieval, prior authorizations, and claims processing.",
-  },
-  {
     title: "CRM Management & Pipeline Operations",
     stack: "GoHighLevel, HubSpot, Salesforce, Zoho, PostgreSQL, n8n, Webhooks, SMS/Email Automation",
     description: "Complete CRM administration, automated lead follow-ups, pipeline management, data hygiene, and automated KPI analytics.",
