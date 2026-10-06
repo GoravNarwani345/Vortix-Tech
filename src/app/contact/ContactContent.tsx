@@ -154,7 +154,7 @@ export default function ContactContent() {
                     <div>
                       <p className="text-gray-500 text-sm font-medium mb-1">Location</p>
                       <p className="text-gray-900 font-bold text-base leading-snug">
-                        21st Commercial, DHA Phase 2<br />
+                        DHA Phase 2<br />
                         Karachi, 75500, Pakistan
                       </p>
                     </div>

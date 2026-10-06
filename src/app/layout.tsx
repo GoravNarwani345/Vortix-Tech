@@ -156,7 +156,9 @@ export default function RootLayout({
               ],
               address: {
                 "@type": "PostalAddress",
+                streetAddress: "DHA Phase 2",
                 addressLocality: "Karachi",
+                postalCode: "75500",
                 addressRegion: "Sindh",
                 addressCountry: "PK",
               },

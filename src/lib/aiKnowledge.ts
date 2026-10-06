@@ -137,7 +137,7 @@ export async function compileAiKnowledge(): Promise<{
 - Tagline: AI-Powered Digital Solutions
 - Email: ${contactEmail}
 - Phone Numbers: +92 314 2189730 (Pakistan/WhatsApp), +1 209 779 5428 (USA/International)
-- Office Location: Karachi, Sindh, Pakistan
+- Office Location: DHA Phase 2, Karachi 75500, Pakistan
 - Agency Profile: High-velocity digital agency specializing in Next.js web applications, React Native mobile apps, autonomous AI agents, n8n workflow automations, and ComfyUI image/video pipelines.
 - Core Value: We build cutting-edge production-grade software with an AI-first mindset, transforming business efficiency.
 - Consultation & Pricing: We provide bespoke custom pricing tailored to scope. Always warmly encourage visitors to schedule a free 30-minute discovery consultation or reach out on WhatsApp (+92 314 2189730).`;
