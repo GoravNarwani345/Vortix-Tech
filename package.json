@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "bun test",
+    "migrate:webp": "bun src/lib/migrateImagesToWebp.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

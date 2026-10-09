@@ -100,6 +100,51 @@ export async function migrateProjectsToWebp(): Promise<{
   };
 }
 
+export async function convertDiskUploadsToWebp(): Promise<{
+  inspected: number;
+  converted: number;
+  errors: string[];
+}> {
+  const uploadDir = path.join(process.cwd(), "public", "uploads");
+  await fs.mkdir(uploadDir, { recursive: true });
+
+  let converted = 0;
+  let inspected = 0;
+  const errors: string[] = [];
+
+  try {
+    const files = await fs.readdir(uploadDir);
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+      if ([".png", ".jpg", ".jpeg", ".bmp"].includes(ext)) {
+        inspected++;
+        const baseName = path.basename(file, ext);
+        const inputPath = path.join(uploadDir, file);
+        const outputPath = path.join(uploadDir, `${baseName}.webp`);
+
+        try {
+          await sharp(inputPath).webp({ quality: 80 }).toFile(outputPath);
+          converted++;
+        } catch (e) {
+          errors.push(
+            `Failed to convert disk file ${file}: ${
+              e instanceof Error ? e.message : "Unknown error"
+            }`
+          );
+        }
+      }
+    }
+  } catch (err) {
+    errors.push(
+      `Failed to read uploads directory: ${
+        err instanceof Error ? err.message : "Unknown error"
+      }`
+    );
+  }
+
+  return { inspected, converted, errors };
+}
+
 const isMainModule = Boolean(
   (import.meta as unknown as { main?: boolean }).main ||
     (typeof process !== "undefined" &&
@@ -108,9 +153,17 @@ const isMainModule = Boolean(
 );
 
 if (isMainModule) {
-  migrateProjectsToWebp()
-    .then((res) => {
-      console.log("Migration complete:", JSON.stringify(res, null, 2));
+  Promise.all([convertDiskUploadsToWebp(), migrateProjectsToWebp()])
+    .then(([diskRes, dbRes]) => {
+      console.log("=========================================");
+      console.log("   VORTIX TECH - WEBP MIGRATION COMPLETE ");
+      console.log("=========================================");
+      console.log(`Disk Files Converted:     ${diskRes.converted} / ${diskRes.inspected}`);
+      console.log(`Database Projects Checked: ${dbRes.inspected}`);
+      console.log(`Database Images Updated:  ${dbRes.converted}`);
+      if (diskRes.errors.length > 0 || dbRes.errors.length > 0) {
+        console.warn("Errors encountered:", [...diskRes.errors, ...dbRes.errors]);
+      }
       process.exit(0);
     })
     .catch((err) => {
