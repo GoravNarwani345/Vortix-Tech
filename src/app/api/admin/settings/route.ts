@@ -23,6 +23,12 @@ export async function GET() {
       stored.CONTACT_EMAIL || process.env.CONTACT_EMAIL || "info@thevortixtech.com";
     const rawGeminiKey =
       stored.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+    const rawAgentRouterKey =
+      stored.AGENTROUTER_API_KEY || process.env.AGENTROUTER_API_KEY || "";
+    const effectiveAgentRouterBaseUrl =
+      stored.AGENTROUTER_BASE_URL || process.env.AGENTROUTER_BASE_URL || "https://agentrouter.org/v1";
+    const effectiveAgentRouterModel =
+      stored.AGENTROUTER_MODEL || process.env.AGENTROUTER_MODEL || "deepseek-v4-flash";
     const rawResendKey =
       stored.RESEND_API_KEY || process.env.RESEND_API_KEY || "";
     const rawCronSecret =
@@ -35,12 +41,18 @@ export async function GET() {
       ),
       geminiApiKeyMasked: maskSecret(rawGeminiKey),
       hasGeminiApiKey: Boolean(rawGeminiKey),
+      agentRouterApiKeyMasked: maskSecret(rawAgentRouterKey),
+      hasAgentRouterApiKey: Boolean(rawAgentRouterKey),
+      agentRouterBaseUrl: effectiveAgentRouterBaseUrl,
+      agentRouterModel: effectiveAgentRouterModel,
+      agentRouterReasoningEffort: stored.AGENTROUTER_REASONING_EFFORT || process.env.AGENTROUTER_REASONING_EFFORT || "medium",
+      aiProvider: stored.AI_PROVIDER || (rawAgentRouterKey ? "agentrouter" : "gemini"),
       resendApiKeyMasked: maskSecret(rawResendKey),
       hasResendApiKey: Boolean(rawResendKey),
       contactEmail: effectiveContactEmail,
       cronSecretMasked: maskSecret(rawCronSecret),
       hasCronSecret: Boolean(rawCronSecret),
-      aiModel: stored.AI_MODEL || "gemini-3.8-flash",
+      aiModel: stored.AI_MODEL || "deepseek-v4-flash",
       aiTemperature: stored.AI_TEMPERATURE ?? 0.7,
       aiMaxTokens: stored.AI_MAX_TOKENS ?? 800,
       aiCustomInstructions: stored.AI_CUSTOM_INSTRUCTIONS || "",
@@ -99,6 +111,26 @@ export async function POST(req: Request) {
 
     if (typeof body.geminiApiKey === "string" && body.geminiApiKey.trim()) {
       updates.GEMINI_API_KEY = body.geminiApiKey.trim();
+    }
+
+    if (typeof body.agentRouterApiKey === "string" && body.agentRouterApiKey.trim()) {
+      updates.AGENTROUTER_API_KEY = body.agentRouterApiKey.trim();
+    }
+
+    if (typeof body.agentRouterBaseUrl === "string" && body.agentRouterBaseUrl.trim()) {
+      updates.AGENTROUTER_BASE_URL = body.agentRouterBaseUrl.trim();
+    }
+
+    if (typeof body.agentRouterModel === "string" && body.agentRouterModel.trim()) {
+      updates.AGENTROUTER_MODEL = body.agentRouterModel.trim();
+    }
+
+    if (typeof body.agentRouterReasoningEffort === "string") {
+      updates.AGENTROUTER_REASONING_EFFORT = body.agentRouterReasoningEffort;
+    }
+
+    if (typeof body.aiProvider === "string") {
+      updates.AI_PROVIDER = body.aiProvider as "gemini" | "agentrouter";
     }
 
     if (typeof body.resendApiKey === "string" && body.resendApiKey.trim()) {

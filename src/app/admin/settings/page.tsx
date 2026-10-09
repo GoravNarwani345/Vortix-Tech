@@ -44,6 +44,12 @@ type SettingsData = {
   hasAdminPassword: boolean;
   geminiApiKeyMasked: string;
   hasGeminiApiKey: boolean;
+  agentRouterApiKeyMasked?: string;
+  hasAgentRouterApiKey?: boolean;
+  agentRouterBaseUrl?: string;
+  agentRouterModel?: string;
+  agentRouterReasoningEffort?: string;
+  aiProvider?: "gemini" | "agentrouter" | "auto";
   resendApiKeyMasked: string;
   hasResendApiKey: boolean;
   contactEmail: string;
@@ -146,7 +152,7 @@ export default function AdminSettingsPage() {
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [geminiMasked, setGeminiMasked] = useState("");
-  const [aiModel, setAiModel] = useState("gemini-3.8-flash");
+  const [aiModel, setAiModel] = useState("deepseek-v4-flash");
   const [modelTierFilter, setModelTierFilter] = useState<"all" | "free" | "paid">("all");
   const [showCustomModel, setShowCustomModel] = useState(false);
   const [customModelInput, setCustomModelInput] = useState("");
@@ -157,6 +163,27 @@ export default function AdminSettingsPage() {
   const [resendApiKey, setResendApiKey] = useState("");
   const [cronSecret, setCronSecret] = useState("");
   const [cronSecretMasked, setCronSecretMasked] = useState("");
+
+  // AgentRouter & AI Gateway states (DeepSeek priority #1)
+  const [agentRouterApiKey, setAgentRouterApiKey] = useState("");
+  const [showAgentRouterKey, setShowAgentRouterKey] = useState(false);
+  const [agentRouterMasked, setAgentRouterMasked] = useState("");
+  const [agentRouterBaseUrl, setAgentRouterBaseUrl] = useState("https://agentrouter.org/v1");
+  const [agentRouterModel, setAgentRouterModel] = useState("deepseek-v4-flash");
+  const [agentRouterReasoningEffort, setAgentRouterReasoningEffort] = useState("medium");
+  const [aiProvider, setAiProvider] = useState<"gemini" | "agentrouter">("agentrouter");
+
+  // Model diagnostics state (DeepSeek tested first)
+  const [checkingModels, setCheckingModels] = useState(false);
+  const [modelCheckResults, setModelCheckResults] = useState<Array<{
+    model: string;
+    online: boolean;
+    latencyMs: number;
+    reply?: string;
+    error?: string;
+    costTier: string;
+    recommended?: boolean;
+  }> | null>(null);
 
   // Source toggles
   const [aiIncludeServices, setAiIncludeServices] = useState(true);
@@ -192,7 +219,12 @@ export default function AdminSettingsPage() {
         const s: SettingsData = data.settings;
         setAdminEmail(s.adminEmail || "");
         setGeminiMasked(s.geminiApiKeyMasked || "");
-        setAiModel(s.aiModel || "gemini-3.8-flash");
+        setAgentRouterMasked(s.agentRouterApiKeyMasked || "");
+        setAgentRouterBaseUrl(s.agentRouterBaseUrl || "https://agentrouter.org/v1");
+        setAgentRouterModel(s.agentRouterModel || "deepseek-v4-flash");
+        setAgentRouterReasoningEffort(s.agentRouterReasoningEffort || "medium");
+        setAiProvider((s.aiProvider as "gemini" | "agentrouter") || (s.hasAgentRouterApiKey ? "agentrouter" : "gemini"));
+        setAiModel(s.aiModel || "deepseek-v4-flash");
         setAiTemperature(s.aiTemperature ?? 0.7);
         setAiMaxTokens(s.aiMaxTokens ?? 800);
         setAiCustomInstructions(s.aiCustomInstructions || "");
@@ -274,6 +306,10 @@ export default function AdminSettingsPage() {
         aiMaxTokens,
         aiCustomInstructions,
         contactEmail,
+        agentRouterBaseUrl,
+        agentRouterModel,
+        agentRouterReasoningEffort,
+        aiProvider,
         aiIncludeServices,
         aiIncludePortfolio,
         aiIncludeBlog,
@@ -296,6 +332,7 @@ export default function AdminSettingsPage() {
 
       if (newPassword) payload.adminPassword = newPassword;
       if (geminiApiKey) payload.geminiApiKey = geminiApiKey;
+      if (agentRouterApiKey) payload.agentRouterApiKey = agentRouterApiKey;
       if (resendApiKey) payload.resendApiKey = resendApiKey;
       if (cronSecret) payload.cronSecret = cronSecret;
 
@@ -312,6 +349,7 @@ export default function AdminSettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
       setGeminiApiKey("");
+      setAgentRouterApiKey("");
       setResendApiKey("");
       setCronSecret("");
       await fetchSettings();
@@ -322,6 +360,37 @@ export default function AdminSettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCheckModels = async () => {
+    setCheckingModels(true);
+    setModelCheckResults(null);
+    try {
+      const res = await fetch("/api/admin/ai/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "check-models",
+          apiKey: agentRouterApiKey || undefined,
+          baseUrl: agentRouterBaseUrl || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to test models");
+      setModelCheckResults(data.models);
+      toast.success("Model connectivity test complete! DeepSeek checked first.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error checking models";
+      toast.error(msg);
+    } finally {
+      setCheckingModels(false);
+    }
+  };
+
+  const handleSelectGatewayModel = (selectedModel: string) => {
+    setAgentRouterModel(selectedModel);
+    setAiModel(selectedModel);
+    toast.success(`Active model set to ${selectedModel}. Click Save Settings to persist.`);
   };
 
   const handleManualSync = async () => {
@@ -751,7 +820,236 @@ export default function AdminSettingsPage() {
 
           {/* TAB 2: AI & API CONFIGURATION */}
           {activeTab === "ai" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-8">
+              {/* AgentRouter Gateway & DeepSeek Credit-Optimizer Card */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Zap size={20} className="text-accent" />
+                      <h2 className="text-lg font-bold text-foreground">
+                        AgentRouter AI Gateway & Model Optimizer
+                      </h2>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        DeepSeek First • Lowest Credits
+                      </span>
+                    </div>
+                    <p className="text-foreground-muted text-xs mt-1">
+                      Direct connection to <span className="font-mono text-accent">https://agentrouter.org/v1</span>. Always prioritizes low-credit models (<span className="font-semibold text-emerald-400">deepseek-v4-flash</span>) for chatbot, blogging, and admin AI tasks.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCheckModels}
+                      disabled={checkingModels}
+                      className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm shrink-0"
+                    >
+                      {checkingModels ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Testing DeepSeek & Models...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Gauge size={14} />
+                          <span>Check Available Models (DeepSeek 1st)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                  {/* Gateway API Key */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      AgentRouter API Key
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showAgentRouterKey ? "text" : "password"}
+                        value={agentRouterApiKey}
+                        onChange={(e) => setAgentRouterApiKey(e.target.value)}
+                        placeholder={agentRouterMasked || "sk-agentrouter-..."}
+                        className="w-full pl-4 pr-10 py-2 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAgentRouterKey(!showAgentRouterKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                      >
+                        {showAgentRouterKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-foreground-muted flex items-center gap-1">
+                      {agentRouterMasked ? (
+                        <span className="text-emerald-500 font-medium flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Configured: {agentRouterMasked}
+                        </span>
+                      ) : (
+                        <span className="text-amber-500 flex items-center gap-1">
+                          <AlertTriangle size={13} /> Enter key or set in environment.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Gateway Base URL */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      Gateway Base URL
+                    </label>
+                    <input
+                      type="text"
+                      value={agentRouterBaseUrl}
+                      onChange={(e) => setAgentRouterBaseUrl(e.target.value)}
+                      placeholder="https://agentrouter.org/v1"
+                      className="w-full px-3.5 py-2 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-[11px] text-foreground-muted">OpenAI-compatible /v1 endpoint</p>
+                  </div>
+
+                  {/* Active Gateway Model */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      Active Gateway Model
+                    </label>
+                    <select
+                      value={agentRouterModel}
+                      onChange={(e) => {
+                        setAgentRouterModel(e.target.value);
+                        setAiModel(e.target.value);
+                      }}
+                      className="w-full px-3 py-2 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent font-medium"
+                    >
+                      <option value="deepseek-v4-flash">
+                        DeepSeek V4 Flash (Priority #1 • Lowest Credits)
+                      </option>
+                      <option value="gpt-5.6-sol">
+                        GPT-5.6 Sol (Medium Reasoning)
+                      </option>
+                      <option value="gpt-6-astra">
+                        GPT-6 Astra (Flagship Frontier)
+                      </option>
+                      <option value="claude-opus-4-8">
+                        Claude Opus 4.8 (High Precision)
+                      </option>
+                      <option value="claude-opus-5">
+                        Claude Opus 5 (Deep Thought)
+                      </option>
+                    </select>
+                    <p className="text-[11px] text-emerald-400 font-medium">
+                      {agentRouterModel.includes("deepseek") ? "Burns lowest API credits (~300ms)" : "Custom selection"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Model Check Results Diagnostic Feed */}
+                {modelCheckResults && (
+                  <div className="pt-4 border-t border-card-border space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <Gauge size={16} className="text-accent" />
+                        Live Model Connectivity & Credit Audit (DeepSeek Checked First):
+                      </h3>
+                      <span className="text-xs text-foreground-muted">
+                        Click &ldquo;Use This Model&rdquo; to switch instantly
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                      {modelCheckResults.map((item) => {
+                        const isCurrent = agentRouterModel === item.model;
+                        const isDeepSeek = item.model.toLowerCase().includes("deepseek");
+                        return (
+                          <div
+                            key={item.model}
+                            className={cn(
+                              "p-3.5 rounded-xl border flex flex-col justify-between transition-all",
+                              isDeepSeek
+                                ? "bg-emerald-500/5 border-emerald-500/40 ring-1 ring-emerald-500/20"
+                                : "bg-background/60 border-card-border hover:border-accent/30"
+                            )}
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className={cn(
+                                  "text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider",
+                                  isDeepSeek
+                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                    : "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                                )}>
+                                  {isDeepSeek ? "Priority #1" : "Frontier"}
+                                </span>
+
+                                <span className="flex items-center gap-1 text-[11px] font-medium">
+                                  {item.online ? (
+                                    <>
+                                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                      <span className="text-emerald-400 font-semibold">{item.latencyMs}ms</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="w-2 h-2 rounded-full bg-red-400" />
+                                      <span className="text-red-400 font-semibold">Offline</span>
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="font-mono text-xs font-bold text-foreground truncate">
+                                {item.model}
+                              </div>
+
+                              <div className="text-[11px] text-foreground-muted">
+                                {item.costTier}
+                              </div>
+
+                              {item.online ? (
+                                <p className="text-[10px] text-emerald-400 font-mono truncate">
+                                  Reply: &ldquo;{item.reply}&rdquo;
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-red-400 truncate" title={item.error}>
+                                  {item.error || "Connection error"}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSelectGatewayModel(item.model)}
+                              disabled={!item.online}
+                              className={cn(
+                                "mt-3 w-full py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                isCurrent
+                                  ? "bg-accent text-white shadow-sm"
+                                  : item.online
+                                  ? "bg-card-bg border border-card-border hover:border-accent text-foreground"
+                                  : "bg-card-bg/40 text-foreground-muted cursor-not-allowed border border-card-border/40"
+                              )}
+                            >
+                              {isCurrent ? (
+                                <>
+                                  <Check size={12} />
+                                  <span>Active Model</span>
+                                </>
+                              ) : (
+                                <span>Use This Model</span>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Two Column Section: Gemini Fallback & Resend Email */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Gemini Configuration */}
               <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
                 <div>
@@ -1142,7 +1440,8 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* TAB 3: DAILY CRON & SYNC HISTORY */}
           {activeTab === "cron" && (

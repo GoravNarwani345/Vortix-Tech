@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
 import { getAiKnowledge } from "@/lib/aiKnowledge";
 import { getSetting } from "@/lib/settings";
+import {
+  executeAiCompletion,
+  checkAvailableModels,
+  AGENTROUTER_DEFAULT_MODELS,
+} from "@/lib/aiClient";
 
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
@@ -9,8 +14,46 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { prompt } = await req.json();
+    const body = await req.json();
 
+    // ACTION 1: Check connectivity and latency across available AgentRouter models
+    if (body.action === "check-models") {
+      const apiKey =
+        body.apiKey ||
+        (await getSetting("AGENTROUTER_API_KEY")) ||
+        process.env.AGENTROUTER_API_KEY;
+
+      if (!apiKey) {
+        return NextResponse.json(
+          {
+            error:
+              "Please enter or configure your AgentRouter API key to test models.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const baseUrl =
+        body.baseUrl ||
+        (await getSetting("AGENTROUTER_BASE_URL")) ||
+        process.env.AGENTROUTER_BASE_URL ||
+        "https://agentrouter.org/v1";
+
+      const modelsToTest =
+        Array.isArray(body.models) && body.models.length > 0
+          ? body.models
+          : AGENTROUTER_DEFAULT_MODELS;
+
+      const results = await checkAvailableModels(apiKey, baseUrl, modelsToTest);
+
+      return NextResponse.json({
+        success: true,
+        models: results,
+      });
+    }
+
+    // ACTION 2: Run a live test prompt against the active or requested model
+    const prompt = body.prompt;
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return NextResponse.json(
         { error: "Please enter a test prompt or visitor question." },
@@ -18,93 +61,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiKey =
-      (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json(
-        {
-          error:
-            "Gemini API key is not configured. Please save your API key in the AI Configuration tab first.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
-    const temperature = (await getSetting("AI_TEMPERATURE")) ?? 0.7;
-    const maxTokens = (await getSetting("AI_MAX_TOKENS")) ?? 800;
-
-    // Fetch the active compiled website knowledge
     const systemPromptText = await getAiKnowledge();
+    const modelToUse = body.model;
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
-
-    const startTime = Date.now();
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPromptText }],
-        },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt.trim() }],
-          },
-        ],
-        generationConfig: {
-          temperature,
-          maxOutputTokens: maxTokens,
-        },
-      }),
+    const result = await executeAiCompletion({
+      prompt: prompt.trim(),
+      systemPrompt: systemPromptText,
+      model: modelToUse,
+      customApiKey: body.apiKey,
+      customBaseUrl: body.baseUrl,
+      temperature: body.temperature,
+      maxTokens: body.maxTokens || 800,
     });
-
-    const latencyMs = Date.now() - startTime;
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let parsedError = errorText;
-      try {
-        const errorJson = JSON.parse(errorText);
-        parsedError = errorJson.error?.message || errorText;
-      } catch {
-        // Raw text
-      }
-      return NextResponse.json(
-        {
-          error: `Gemini API Error (${response.status}): ${parsedError}`,
-          latencyMs,
-        },
-        { status: 400 }
-      );
-    }
-
-    const data = await response.json();
-    const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response generated.";
-
-    const usageMetadata = data.usageMetadata || {};
 
     return NextResponse.json({
       success: true,
-      reply,
-      latencyMs,
-      modelUsed: aiModel,
-      usage: {
-        promptTokenCount:
-          usageMetadata.promptTokenCount ??
-          Math.ceil((systemPromptText.length + prompt.length) / 4),
-        candidatesTokenCount:
-          usageMetadata.candidatesTokenCount ?? Math.ceil(reply.length / 4),
-        totalTokenCount: usageMetadata.totalTokenCount,
-      },
+      reply: result.text,
+      latencyMs: result.latencyMs,
+      modelUsed: result.modelUsed,
+      provider: result.provider,
+      usage: result.usage,
     });
   } catch (error) {
-    console.error("AI Audit Test error:", error);
+    console.error("AI Test error:", error);
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Test request failed",

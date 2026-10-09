@@ -5,6 +5,11 @@ export type AppSettings = {
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD?: string;
   GEMINI_API_KEY?: string;
+  AGENTROUTER_API_KEY?: string;
+  AGENTROUTER_BASE_URL?: string;
+  AGENTROUTER_MODEL?: string;
+  AGENTROUTER_REASONING_EFFORT?: string;
+  AI_PROVIDER?: "gemini" | "agentrouter" | "auto";
   RESEND_API_KEY?: string;
   CONTACT_EMAIL?: string;
   CRON_SECRET?: string;

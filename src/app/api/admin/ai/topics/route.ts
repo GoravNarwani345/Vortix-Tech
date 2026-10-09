@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import { getSetting } from "@/lib/settings";
+import { executeAiCompletion } from "@/lib/aiClient";
 
 export type SEOTopicItem = {
   title: string;
@@ -19,12 +19,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const categoryFilter = body?.category;
-
-    const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("Gemini API key is not configured.");
-
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
 
     const prompt = `You are an elite SEO strategist and Content Director for Vortix Tech (an agency building Next.js, mobile apps, n8n automations, LLMs, and RAG systems).
 Generate 6 daily high-traffic, SEO-opportunity article ideas that have strong search intent (people looking for solutions or agency services).
@@ -48,22 +42,13 @@ Array<{
   briefReason: string;
 }>`;
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.8,
-          responseMimeType: "application/json",
-        },
-      }),
+    const aiResult = await executeAiCompletion({
+      prompt,
+      temperature: 0.8,
+      maxTokens: 1500,
     });
 
-    if (!response.ok) throw new Error("Failed to generate topics from Gemini API");
-
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const reply = aiResult.text;
 
     let items: SEOTopicItem[] = [];
     try {

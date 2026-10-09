@@ -87,7 +87,7 @@ export default function RootLayout({
               "@type": "Organization",
               name: "Vortix Tech",
               url: "https://vortixtech.com",
-              logo: "https://vortixtech.com/logo.png",
+              logo: "https://vortixtech.com/logo.webp",
               contactPoint: [
                 {
                   "@type": "ContactPoint",
@@ -137,7 +137,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               name: "Vortix Tech",
-              image: "https://vortixtech.com/logo.png",
+              image: "https://vortixtech.com/logo.webp",
               url: "https://vortixtech.com",
               telephone: "+92 314 2189730",
               contactPoint: [

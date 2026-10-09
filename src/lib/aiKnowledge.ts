@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { getSetting, getStoredSettings } from "@/lib/settings";
 
@@ -408,7 +409,7 @@ export async function syncAiKnowledge(trigger: "manual" | "cron" | "initial"): P
     const nextSync = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     const logEntry: SyncLogEntry = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: crypto.randomUUID(),
       timestamp: now.toISOString(),
       trigger,
       status: "success",
@@ -435,7 +436,7 @@ export async function syncAiKnowledge(trigger: "manual" | "cron" | "initial"): P
   } catch (error) {
     const durationMs = Date.now() - startTime;
     const errorEntry: SyncLogEntry = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       trigger,
       status: "error",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import { getSetting } from "@/lib/settings";
+import { executeAiCompletion } from "@/lib/aiClient";
 
 export type ProjectAuditResult = {
   score: number; // 0-100
@@ -27,17 +27,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Gemini API key is not configured. Please add it in Admin Settings." },
-        { status: 400 }
-      );
-    }
-
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
 
     const prompt = `You are a world-class Technical SEO and Conversion Rate Optimization (CRO) expert for high-end web & AI agencies.
 Perform an in-depth SEO audit and generate targeted, high-intent keywords for this portfolio project:
@@ -69,25 +58,13 @@ Return ONLY a valid JSON object matching this TypeScript interface (no markdown,
   "recommendations": ["Actionable tip 1", "Actionable tip 2"]
 }`;
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          responseMimeType: "application/json",
-        },
-      }),
+    const aiResult = await executeAiCompletion({
+      prompt,
+      temperature: 0.4,
+      maxTokens: 1500,
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API error (${response.status}): ${errText}`);
-    }
-
-    const data = await response.json();
-    const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const rawReply = aiResult.text;
 
     if (!rawReply) {
       throw new Error("No response received from AI model.");

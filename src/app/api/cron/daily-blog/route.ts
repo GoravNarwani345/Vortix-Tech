@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { constantTimeEqual } from "@/lib/session";
 import { getSetting } from "@/lib/settings";
+import { executeAiCompletion } from "@/lib/aiClient";
 
 // This should be triggered by a Cron service (like Vercel Cron or GitHub Actions)
 export async function GET(req: Request) {
@@ -28,29 +29,18 @@ export async function GET(req: Request) {
       );
     }
 
-    const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("Gemini API key is missing");
-
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
-
-    // 2. Fetch a Trending Topic
-    const topicEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
+    // 2. Fetch a Trending Topic using DeepSeek priority
     const topicPrompt = `You are an AI trend analyzer. Suggest EXACTLY ONE highly engaging, trending, and fun topic for a technology agency blog (Vortix Tech) based on today's tech news. Focus on AI, web development, or automation. Return ONLY the topic string, no quotes.`;
     
-    const topicResponse = await fetch(topicEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: topicPrompt }] }],
-        generationConfig: { temperature: 0.9 },
-      }),
+    const topicResult = await executeAiCompletion({
+      prompt: topicPrompt,
+      temperature: 0.9,
+      maxTokens: 100,
     });
     
-    if (!topicResponse.ok) throw new Error("Failed to get topic");
-    const topicData = await topicResponse.json();
-    const topic = topicData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "The Future of AI Automation";
+    const topic = topicResult.text.trim() || "The Future of AI Automation";
 
-    // 3. Write the Article
+    // 3. Write the Article using DeepSeek priority
     const writePrompt = `Write a highly engaging, SEO-optimized blog article about "${topic}".
     Requirements:
     1. Formatted in Markdown.
@@ -60,18 +50,13 @@ export async function GET(req: Request) {
     5. Professional, exciting tone.
     Return ONLY markdown.`;
 
-    const writeResponse = await fetch(topicEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: writePrompt }] }],
-        generationConfig: { temperature: 0.7 },
-      }),
+    const writeResult = await executeAiCompletion({
+      prompt: writePrompt,
+      temperature: 0.7,
+      maxTokens: 2500,
     });
 
-    if (!writeResponse.ok) throw new Error("Failed to write article");
-    const writeData = await writeResponse.json();
-    const markdown = writeData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const markdown = writeResult.text;
 
     if (!markdown) throw new Error("No markdown generated");
 

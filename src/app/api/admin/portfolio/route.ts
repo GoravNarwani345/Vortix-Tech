@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { isAuthenticated } from "@/lib/auth";
 import { syncAiKnowledge } from "@/lib/aiKnowledge";
+import { validateProjectMedia } from "@/lib/mediaHelper";
 
 export async function GET() {
   if (!(await isAuthenticated())) {
@@ -39,6 +40,12 @@ export async function POST(req: Request) {
         { error: "Title and description are required" },
         { status: 400 }
       );
+    }
+
+    const mediaList = Array.isArray(images) ? images : [];
+    const mediaCheck = validateProjectMedia(mediaList);
+    if (!mediaCheck.valid) {
+      return NextResponse.json({ error: mediaCheck.error }, { status: 400 });
     }
 
     const project = await prisma.project.create({

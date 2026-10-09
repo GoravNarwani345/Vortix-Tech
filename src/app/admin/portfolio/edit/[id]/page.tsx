@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, X, Upload, Loader2, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Save, X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import ProjectSeoAuditCard from "@/components/admin/ProjectSeoAuditCard";
-import { compressImage, formatBytes } from "@/lib/imageCompression";
+import ProjectMediaUploader from "@/components/admin/ProjectMediaUploader";
 
 type ProjectData = {
   id: string;
@@ -28,11 +28,8 @@ export default function EditProjectPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [compressing, setCompressing] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [images, setImages] = useState<string[]>([]);
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [categories, setCategories] = useState<string[]>([
     "Web App",
@@ -104,60 +101,6 @@ export default function EditProjectPage() {
       active = false;
     };
   }, [id]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
-      return;
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Original image must be less than 20MB");
-      return;
-    }
-
-    setCompressing(true);
-    const toastId = toast.loading("Optimizing & compressing image...");
-
-    try {
-      const result = await compressImage(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.8,
-      });
-
-      setImages((prev) => [...prev, result.dataUrl]);
-      toast.success(
-        `Optimized! ${formatBytes(result.originalSize)} -> ${formatBytes(result.compressedSize)} (${result.compressionRatio}% smaller)`,
-        { id: toastId }
-      );
-    } catch {
-      toast.error("Failed to process image", { id: toastId });
-    } finally {
-      setCompressing(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleAddImageUrl = () => {
-    const trimmed = imageUrl.trim();
-    if (!trimmed) return;
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-      toast.error("Please enter a valid URL starting with http:// or https://");
-      return;
-    }
-    setImages((prev) => [...prev, trimmed]);
-    setImageUrl("");
-    setShowUrlInput(false);
-    toast.success("Image URL added!");
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const addTag = (tagToAdd: string) => {
     const trimmed = tagToAdd.trim().replace(/^,+|,+$/g, "");
@@ -316,84 +259,7 @@ export default function EditProjectPage() {
           </div>
 
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-semibold text-gray-900">Project Images</label>
-              <button
-                type="button"
-                onClick={() => setShowUrlInput(!showUrlInput)}
-                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
-              >
-                <LinkIcon size={12} />
-                {showUrlInput ? "Hide URL input" : "+ Add image via URL"}
-              </button>
-            </div>
-
-            {showUrlInput && (
-              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddImageUrl();
-                    }
-                  }}
-                  placeholder="Paste direct image URL (https://...)"
-                  className="flex-1 px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-accent"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddImageUrl}
-                  className="px-4 py-2 text-xs font-semibold bg-gray-900 text-white rounded-lg hover:bg-black transition-colors"
-                >
-                  Add URL
-                </button>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
-              {images.map((img, i) => (
-                <div key={i} className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 group bg-gray-100">
-                  <img src={img} alt={`Preview ${i}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                    title="Remove image"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-
-              <label
-                className={`aspect-video rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-accent transition-all ${
-                  compressing ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                {compressing ? (
-                  <>
-                    <Loader2 size={24} className="mb-2 animate-spin text-indigo-600" />
-                    <span className="text-xs font-medium text-indigo-600">Compressing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload size={24} className="mb-2" />
-                    <span className="text-sm font-medium">Upload File</span>
-                    <span className="text-[10px] text-gray-400 mt-0.5">Auto-compressed</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={compressing}
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
+            <ProjectMediaUploader media={images} onChange={setImages} />
           </div>
 
           <div className="mb-6">

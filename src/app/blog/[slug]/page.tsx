@@ -93,7 +93,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               name: "Vortix Tech",
               logo: {
                 "@type": "ImageObject",
-                url: "https://vortixtech.com/logo.png"
+                url: "https://vortixtech.com/logo.webp"
               }
             }
           })

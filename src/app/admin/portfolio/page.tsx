@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Edit, Trash2, ExternalLink, RefreshCw } from "lucide-react";
+import { Plus, Edit, Trash2, ExternalLink, RefreshCw, Video } from "lucide-react";
 import toast from "react-hot-toast";
+import { isVideoMedia } from "@/lib/mediaHelper";
 
 type Project = {
   id: string;
@@ -132,9 +133,23 @@ export default function AdminPortfolioPage() {
                   <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-200 relative">
                           {project.images && project.images.length > 0 ? (
-                            <img src={project.images[0]} alt={project.title} className="w-full h-full object-cover" />
+                            isVideoMedia(project.images[0]) ? (
+                              <div className="w-full h-full relative bg-black flex items-center justify-center">
+                                <video
+                                  src={project.images[0]}
+                                  className="w-full h-full object-cover opacity-80"
+                                  muted
+                                  preload="metadata"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Video size={14} className="text-white" />
+                                </div>
+                              </div>
+                            ) : (
+                              <img src={project.images[0]} alt={project.title} className="w-full h-full object-cover" />
+                            )
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">?</div>
                           )}

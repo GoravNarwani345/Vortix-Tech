@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, ChevronRight, ChevronLeft, X, Layers, ArrowRight, Eye } from "lucide-react";
+import { ExternalLink, ChevronRight, ChevronLeft, X, Layers, ArrowRight, Eye, Play, Video } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { useContactModal } from "@/components/layout/ContactModalContext";
+import { isVideoMedia } from "@/lib/mediaHelper";
 
 type Project = {
   id?: string;
@@ -152,11 +153,28 @@ export default function PortfolioContent({ projects = [] }: { projects: Project[
                     </div>
                     
                     {project.images && project.images.length > 0 ? (
-                      <img
-                        src={project.images[0]}
-                        alt={project.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
+                      isVideoMedia(project.images[0]) ? (
+                        <div className="relative w-full h-full bg-black">
+                          <video
+                            src={project.images[0]}
+                            muted
+                            loop
+                            playsInline
+                            autoPlay
+                            preload="metadata"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                          />
+                          <div className="absolute top-3 left-3 z-20 bg-purple-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                            <Video size={10} /> VIDEO
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={project.images[0]}
+                          alt={project.title}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      )
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent/10 to-secondary/10">
                         <span className="text-4xl font-serif font-bold text-accent/60">
@@ -165,7 +183,7 @@ export default function PortfolioContent({ projects = [] }: { projects: Project[
                       </div>
                     )}
 
-                    {/* Multiple images indicator */}
+                    {/* Multiple media indicator */}
                     {project.images && project.images.length > 1 && (
                       <div className="absolute top-3 right-3 z-20 bg-black/70 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
                         <Layers size={12} />
@@ -329,21 +347,39 @@ export default function PortfolioContent({ projects = [] }: { projects: Project[
               <div className="overflow-y-auto flex-1">
                 {/* Gallery Header */}
                 <div className="relative w-full bg-gray-950 flex flex-col items-center justify-center">
-                  {/* Main Image Display */}
+                  {/* Main Media Display */}
                   <div className="relative w-full h-72 sm:h-96 md:h-[440px] flex items-center justify-center overflow-hidden bg-black/90">
                     {selectedProject.images && selectedProject.images.length > 0 ? (
-                      <AnimatePresence mode="wait">
-                        <motion.img
-                          key={activeImageIndex}
-                          src={selectedProject.images[activeImageIndex] || selectedProject.images[0]}
-                          alt={`${selectedProject.title} screenshot ${activeImageIndex + 1}`}
-                          initial={{ opacity: 0, scale: 0.97 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 1.03 }}
-                          transition={{ duration: 0.2 }}
-                          className="w-full h-full object-contain"
-                        />
-                      </AnimatePresence>
+                      (() => {
+                        const currentMedia =
+                          selectedProject.images[activeImageIndex] || selectedProject.images[0];
+                        const isVid = isVideoMedia(currentMedia);
+
+                        return isVid ? (
+                          <div key={activeImageIndex} className="w-full h-full flex items-center justify-center bg-black">
+                            <video
+                              src={currentMedia}
+                              controls
+                              autoPlay
+                              playsInline
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <AnimatePresence mode="wait">
+                            <motion.img
+                              key={activeImageIndex}
+                              src={currentMedia}
+                              alt={`${selectedProject.title} screenshot ${activeImageIndex + 1}`}
+                              initial={{ opacity: 0, scale: 0.97 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 1.03 }}
+                              transition={{ duration: 0.2 }}
+                              className="w-full h-full object-contain"
+                            />
+                          </AnimatePresence>
+                        );
+                      })()
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent/20 to-secondary/20">
                         <span className="text-6xl font-serif font-bold text-white/50">
@@ -383,33 +419,51 @@ export default function PortfolioContent({ projects = [] }: { projects: Project[
                         </button>
 
                         <div className="absolute bottom-4 left-4 z-20 bg-black/70 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md">
-                          {activeImageIndex + 1} / {selectedProject.images.length} images
+                          {activeImageIndex + 1} / {selectedProject.images.length} items
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Thumbnail Navigation Strip if multiple images */}
+                  {/* Thumbnail Navigation Strip if multiple media */}
                   {selectedProject.images && selectedProject.images.length > 1 && (
                     <div className="w-full bg-gray-900/90 p-3 flex items-center justify-center gap-2 overflow-x-auto border-t border-white/10">
-                      {selectedProject.images.map((img, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setActiveImageIndex(idx)}
-                          className={`relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
-                            activeImageIndex === idx
-                              ? "border-accent scale-105 shadow-md"
-                              : "border-transparent opacity-60 hover:opacity-100"
-                          }`}
-                        >
-                          <img
-                            src={img}
-                            alt={`Thumbnail ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
+                      {selectedProject.images.map((item, idx) => {
+                        const isVidThumb = isVideoMedia(item);
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveImageIndex(idx)}
+                            className={`relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
+                              activeImageIndex === idx
+                                ? "border-accent scale-105 shadow-md"
+                                : "border-transparent opacity-60 hover:opacity-100"
+                            }`}
+                          >
+                            {isVidThumb ? (
+                              <div className="w-full h-full relative bg-black flex items-center justify-center">
+                                <video
+                                  src={item}
+                                  muted
+                                  preload="metadata"
+                                  className="w-full h-full object-cover opacity-70"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Play size={12} fill="white" className="text-white ml-0.5" />
+                                </div>
+                              </div>
+                            ) : (
+                              <img
+                                src={item}
+                                alt={`Thumbnail ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

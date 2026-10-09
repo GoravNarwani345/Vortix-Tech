@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export default function LogoMark({ className }: { className?: string }) {
   return (
     <Image
-      src="/logo-mark.png"
+      src="/logo-mark.webp"
       alt="Vortix Tech"
       width={128}
       height={128}

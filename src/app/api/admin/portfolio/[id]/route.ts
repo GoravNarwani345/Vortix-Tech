@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { isAuthenticated } from "@/lib/auth";
 import { syncAiKnowledge } from "@/lib/aiKnowledge";
+import { validateProjectMedia } from "@/lib/mediaHelper";
 
 export async function GET(
   req: Request,
@@ -42,6 +43,14 @@ export async function PATCH(
     const body = await req.json();
     const { title, category, images, description, tags, liveUrl, githubUrl, isPublished } =
       body;
+
+    if (images !== undefined) {
+      const mediaList = Array.isArray(images) ? images : [];
+      const mediaCheck = validateProjectMedia(mediaList);
+      if (!mediaCheck.valid) {
+        return NextResponse.json({ error: mediaCheck.error }, { status: 400 });
+      }
+    }
 
     const project = await prisma.project.update({
       where: { id },
