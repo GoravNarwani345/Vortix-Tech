@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       systemPrompt: knowledgeText,
       temperature,
       maxTokens,
+      task: "chat",
     });
 
     return NextResponse.json({

@@ -26,6 +26,7 @@ export default function EditBlogPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [article, setArticle] = useState<Article>({
     id: "",
@@ -98,6 +99,33 @@ export default function EditBlogPage() {
       toast.error(err instanceof Error ? err.message : "Failed to rewrite article");
     } finally {
       setIsRewriting(false);
+    }
+  };
+
+  const generateStepFunImage = async () => {
+    if (!article.title) return toast.error("Add a title first.");
+    setIsGeneratingImage(true);
+    try {
+      const res = await fetch("/api/admin/ai/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `${article.title}, clean modern tech digital illustration, highly detailed, 4k digital art`,
+          size: "1024x1024",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.details || "Failed to generate image");
+      }
+
+      setArticle((prev) => ({ ...prev, image: data.url }));
+      toast.success("Cover image updated with StepFun AI!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate AI image");
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 

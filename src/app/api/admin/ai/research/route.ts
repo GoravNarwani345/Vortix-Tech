@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import { getSetting } from "@/lib/settings";
+import { executeAiCompletion } from "@/lib/aiClient";
+import { checkDailyQuota, incrementDailyQuota } from "@/lib/workloadQuota";
 
 export type ResearchResult = {
   suggestedTitles: string[];
@@ -24,6 +25,17 @@ export async function POST(req: Request) {
   }
 
   try {
+    const quota = await checkDailyQuota("research");
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: `Daily topic research quota reached (${quota.used}/${quota.limit} brief generated today). Resets at midnight UTC.`,
+          quota,
+        },
+        { status: 429 }
+      );
+    }
+
     const { topic, prompt: userCustomPrompt, focusArea } = await req.json();
 
     if (!topic && !userCustomPrompt) {
@@ -32,17 +44,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const apiKey = (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Gemini API key is not configured. Please add it in Admin Settings." },
-        { status: 400 }
-      );
-    }
-
-    const aiModel = (await getSetting("AI_MODEL")) || "gemini-3.8-flash";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
 
     const query = topic || userCustomPrompt;
     const systemPrompt = `You are a Senior Technical Researcher and Content Strategist for Vortix Tech (an elite modern web, mobile, and AI automation engineering agency).
@@ -64,14 +65,14 @@ TASK:
    - isometric3D: 3D render with soft ambient occlusion
    - cyberDark: Sleek dark-mode aesthetic with neon/cyan accents
 
-Return ONLY a valid JSON object matching this TypeScript structure:
+Return ONLY a valid JSON object matching this TypeScript structure (no backticks, no markdown):
 {
   "suggestedTitles": ["title 1", "title 2", "title 3"],
-  "primaryKeywords": ["kw 1", "kw 2", ...],
-  "secondaryKeywords": ["kw 1", "kw 2", ...],
+  "primaryKeywords": ["kw 1", "kw 2"],
+  "secondaryKeywords": ["kw 1", "kw 2"],
   "category": "string",
   "executiveSummary": "string",
-  "keyInsights": ["insight 1", "insight 2", ...],
+  "keyInsights": ["insight 1", "insight 2"],
   "references": [
     { "title": "Reference Name", "url": "https://...", "description": "why it is relevant" }
   ],
@@ -85,25 +86,14 @@ Return ONLY a valid JSON object matching this TypeScript structure:
   }
 }`;
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-        generationConfig: {
-          temperature: 0.5,
-          responseMimeType: "application/json",
-        },
-      }),
+    const completion = await executeAiCompletion({
+      prompt: systemPrompt,
+      temperature: 0.5,
+      maxTokens: 2500,
+      task: "research",
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API error (${response.status}): ${errText}`);
-    }
-
-    const data = await response.json();
-    const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const rawReply = completion.text;
 
     if (!rawReply) {
       throw new Error("No response received from research engine.");
@@ -112,7 +102,15 @@ Return ONLY a valid JSON object matching this TypeScript structure:
     const cleaned = rawReply.replace(/```json/g, "").replace(/```/g, "").trim();
     const result: ResearchResult = JSON.parse(cleaned);
 
-    return NextResponse.json({ success: true, research: result });
+    const updatedQuota = await incrementDailyQuota("research");
+
+    return NextResponse.json({
+      success: true,
+      quota: updatedQuota,
+      research: result,
+      provider: completion.provider,
+      modelUsed: completion.modelUsed,
+    });
   } catch (error) {
     return NextResponse.json(
       {

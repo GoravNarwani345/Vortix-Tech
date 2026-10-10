@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Loader2,
   Wand2,
@@ -34,6 +34,23 @@ export default function NewBlogPage() {
 
   // Mode: "daily" (Daily SEO Opportunities) or "research" (Custom Prompt & Deep Research)
   const [activeTab, setActiveTab] = useState<"daily" | "research">("daily");
+
+  // Daily Quotas State
+  const [quotas, setQuotas] = useState<{
+    blog?: { used: number; limit: number; remaining: number };
+    research?: { used: number; limit: number; remaining: number };
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/ai/quota")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.quotas) {
+          setQuotas(data.quotas);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Daily Topics State
   const [seoTopics, setSeoTopics] = useState<SEOTopicItem[]>([]);
@@ -71,6 +88,7 @@ export default function NewBlogPage() {
   const [includeCode, setIncludeCode] = useState(true);
   const [includeTables, setIncludeTables] = useState(true);
   const [includeArchitectureFlow, setIncludeArchitectureFlow] = useState(true);
+  const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
 
   // 1. Fetch Daily SEO Topic Ideas
   const generateTopics = async () => {
@@ -130,6 +148,12 @@ export default function NewBlogPage() {
       }
 
       setResearchData(data.research);
+      if (data.quota) {
+        setQuotas((prev) => ({
+          ...prev,
+          research: data.quota,
+        }));
+      }
       if (data.research.suggestedTitles?.[0]) {
         setSelectedTopic(data.research.suggestedTitles[0]);
       }
@@ -179,6 +203,12 @@ export default function NewBlogPage() {
       }
 
       const generated = data.article;
+      if (data.quota) {
+        setQuotas((prev) => ({
+          ...prev,
+          blog: data.quota,
+        }));
+      }
       setArticle((prev) => ({
         ...prev,
         title: generated.title || topicToWrite,
@@ -225,6 +255,42 @@ export default function NewBlogPage() {
 
     setArticle((prev) => ({ ...prev, image: url }));
     toast.success("Cover image generated via Pollinations AI (Free Tier)!");
+  };
+
+  // 4b. Generate AI Cover Image via StepFun (step-image-edit-2)
+  const generateStepFunImage = async (titleOverride?: string) => {
+    const t = titleOverride || article.title;
+    if (!t) return toast.error("Enter or generate an article title first.");
+
+    let promptSuffix = "clean modern minimalist tech digital illustration, highly detailed, 4k digital art";
+    if (imageStyle === "isometric") {
+      promptSuffix = "3D isometric tech workspace render, octane render, soft clean studio lighting, 8k";
+    } else if (imageStyle === "dark") {
+      promptSuffix = "cyberpunk dark tech aesthetic, glowing neon cyan and violet accents, futuristic cinematic 4k";
+    }
+
+    const prompt = `${t}, ${promptSuffix}`;
+    setIsGeneratingAiImage(true);
+
+    try {
+      const res = await fetch("/api/admin/ai/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, size: "1024x1024" }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.details || "Failed to generate image");
+      }
+
+      setArticle((prev) => ({ ...prev, image: data.url }));
+      toast.success(`Cover image generated via StepFun (${data.model || "step-image-edit-2"})!`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate AI image");
+    } finally {
+      setIsGeneratingAiImage(false);
+    }
   };
 
   const copyPromptText = (text: string, key: string) => {
@@ -294,14 +360,35 @@ export default function NewBlogPage() {
           </div>
         </div>
 
-        <button
-          onClick={saveArticle}
-          disabled={isSaving || !article.title || !article.content}
-          className="flex items-center gap-2 bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-black transition-colors font-bold text-sm shadow-sm disabled:opacity-50"
-        >
-          {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-          Publish Article
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2">
+            <span className={`text-xs font-semibold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
+              (quotas?.blog?.remaining ?? 5) === 0
+                ? "bg-red-500/10 text-red-600 border-red-500/20"
+                : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+            }`}>
+              <FileText size={14} />
+              Daily Articles: {quotas?.blog ? `${quotas.blog.used}/${quotas.blog.limit} Used` : "5/Day Limit"}
+            </span>
+            <span className={`text-xs font-semibold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
+              (quotas?.research?.remaining ?? 1) === 0
+                ? "bg-red-500/10 text-red-600 border-red-500/20"
+                : "bg-purple-500/10 text-purple-600 border-purple-500/20"
+            }`}>
+              <Search size={14} />
+              Daily Research: {quotas?.research ? `${quotas.research.used}/${quotas.research.limit} Used` : "1/Day Limit"}
+            </span>
+          </div>
+
+          <button
+            onClick={saveArticle}
+            disabled={isSaving || !article.title || !article.content}
+            className="flex items-center gap-2 bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-black transition-colors font-bold text-sm shadow-sm disabled:opacity-50"
+          >
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            Publish Article
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -741,16 +828,32 @@ export default function NewBlogPage() {
               </div>
             </div>
 
-            {/* Instant Free Generation via Pollinations */}
-            <button
-              type="button"
-              onClick={() => generateImage()}
-              disabled={!article.title}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-xs transition-colors shadow-xs disabled:opacity-50"
-            >
-              <ImageIcon size={15} />
-              Instant Free Image (Pollinations AI)
-            </button>
+            {/* AI Generation Buttons */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => generateStepFunImage()}
+                disabled={!article.title || isGeneratingAiImage}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm disabled:opacity-50"
+              >
+                {isGeneratingAiImage ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Sparkles size={15} />
+                )}
+                {isGeneratingAiImage ? "Generating with StepFun..." : "Generate AI Cover (StepFun)"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => generateImage()}
+                disabled={!article.title || isGeneratingAiImage}
+                className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl font-medium text-xs transition-colors disabled:opacity-50"
+              >
+                <ImageIcon size={14} />
+                Free Fallback (Pollinations AI)
+              </button>
+            </div>
 
             {/* External Free AI Tools Recommendations */}
             <div className="pt-3 border-t border-gray-100">

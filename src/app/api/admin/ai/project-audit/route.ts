@@ -62,6 +62,7 @@ Return ONLY a valid JSON object matching this TypeScript interface (no markdown,
       prompt,
       temperature: 0.4,
       maxTokens: 1500,
+      task: "audit",
     });
 
     const rawReply = aiResult.text;

@@ -5,6 +5,7 @@ import {
   KeyRound,
   Bot,
   FileSearch,
+  Search,
   Clock,
   Save,
   RefreshCw,
@@ -16,7 +17,6 @@ import {
   Check,
   Send,
   Loader2,
-  Sparkles,
   Layers,
   Database,
   ShieldAlert,
@@ -24,10 +24,17 @@ import {
   Mail,
   Zap,
   Gift,
+  Image as ImageIcon,
   DollarSign,
   Gauge,
-  Star,
   BarChart3,
+  Cpu,
+  ShieldCheck,
+  Terminal,
+  SlidersHorizontal,
+  Server,
+  Activity,
+  FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -50,6 +57,20 @@ type SettingsData = {
   agentRouterModel?: string;
   agentRouterReasoningEffort?: string;
   aiProvider?: "gemini" | "agentrouter" | "auto";
+  aiPrimaryProvider?: "agentrouter" | "gemini";
+  aiSecondaryProvider?: "gemini" | "agentrouter" | "none";
+  aiTaskChatProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskChatModel?: string;
+  aiTaskBlogProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskBlogModel?: string;
+  aiTaskResearchProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskResearchModel?: string;
+  aiTaskAuditProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskAuditModel?: string;
+  imageApiKeyMasked?: string;
+  hasImageApiKey?: boolean;
+  imageBaseUrl?: string;
+  imageModel?: string;
   resendApiKeyMasked: string;
   hasResendApiKey: boolean;
   contactEmail: string;
@@ -168,10 +189,35 @@ export default function AdminSettingsPage() {
   const [agentRouterApiKey, setAgentRouterApiKey] = useState("");
   const [showAgentRouterKey, setShowAgentRouterKey] = useState(false);
   const [agentRouterMasked, setAgentRouterMasked] = useState("");
-  const [agentRouterBaseUrl, setAgentRouterBaseUrl] = useState("https://agentrouter.org/v1");
-  const [agentRouterModel, setAgentRouterModel] = useState("deepseek-v4-flash");
+  const [agentRouterBaseUrl, setAgentRouterBaseUrl] = useState("https://api.hcnsec.cn/v1");
+  const [agentRouterModel, setAgentRouterModel] = useState("DeepSeek-V4-Flash");
   const [agentRouterReasoningEffort, setAgentRouterReasoningEffort] = useState("medium");
   const [aiProvider, setAiProvider] = useState<"gemini" | "agentrouter">("agentrouter");
+  const [aiPrimaryProvider, setAiPrimaryProvider] = useState<"agentrouter" | "gemini">("agentrouter");
+  const [aiSecondaryProvider, setAiSecondaryProvider] = useState<"gemini" | "agentrouter" | "none">("gemini");
+
+  // Per-Task Routing Specialization Matrix states
+  const [aiTaskChatProvider, setAiTaskChatProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskChatModel, setAiTaskChatModel] = useState("");
+  const [aiTaskBlogProvider, setAiTaskBlogProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskBlogModel, setAiTaskBlogModel] = useState("");
+  const [aiTaskResearchProvider, setAiTaskResearchProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskResearchModel, setAiTaskResearchModel] = useState("");
+  const [aiTaskAuditProvider, setAiTaskAuditProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskAuditModel, setAiTaskAuditModel] = useState("");
+
+  // Image Generation states (StepFun step-image-edit-2)
+  const [imageApiKey, setImageApiKey] = useState("");
+  const [showImageKey, setShowImageKey] = useState(false);
+  const [imageApiKeyMasked, setImageApiKeyMasked] = useState("");
+  const [imageBaseUrl, setImageBaseUrl] = useState("https://api.hcnsec.cn/v1");
+  const [imageModel, setImageModel] = useState("step-image-edit-2");
+  const [testImagePrompt, setTestImagePrompt] = useState(
+    "A futuristic quantum neural network holographic interface, ultra-detailed 4k digital art"
+  );
+  const [isTestingImage, setIsTestingImage] = useState(false);
+  const [testImageUrl, setTestImageUrl] = useState<string | null>(null);
+  const [testImageLatency, setTestImageLatency] = useState<number | null>(null);
 
   // Model diagnostics state (DeepSeek tested first)
   const [checkingModels, setCheckingModels] = useState(false);
@@ -211,20 +257,45 @@ export default function AdminSettingsPage() {
   const [testLatency, setTestLatency] = useState<number | null>(null);
   const [testTokens, setTestTokens] = useState<number | null>(null);
 
+  // Workload Daily Quotas state
+  const [quotas, setQuotas] = useState<{
+    date: string;
+    chat: { unlimited: boolean; limit: string; used: string; remaining: string };
+    blog: { used: number; limit: number; remaining: number };
+    research: { used: number; limit: number; remaining: number };
+    image: { used: number; limit: number; remaining: number };
+  } | null>(null);
+
   const fetchSettings = async () => {
     try {
       const res = await fetch("/api/admin/settings");
       if (res.ok) {
         const data = await res.json();
+        if (data.quotas) {
+          setQuotas(data.quotas);
+        }
         const s: SettingsData = data.settings;
         setAdminEmail(s.adminEmail || "");
         setGeminiMasked(s.geminiApiKeyMasked || "");
         setAgentRouterMasked(s.agentRouterApiKeyMasked || "");
-        setAgentRouterBaseUrl(s.agentRouterBaseUrl || "https://agentrouter.org/v1");
-        setAgentRouterModel(s.agentRouterModel || "deepseek-v4-flash");
+        setAgentRouterBaseUrl(s.agentRouterBaseUrl || "https://api.hcnsec.cn/v1");
+        setAgentRouterModel(s.agentRouterModel || "DeepSeek-V4-Flash");
         setAgentRouterReasoningEffort(s.agentRouterReasoningEffort || "medium");
-        setAiProvider((s.aiProvider as "gemini" | "agentrouter") || (s.hasAgentRouterApiKey ? "agentrouter" : "gemini"));
-        setAiModel(s.aiModel || "deepseek-v4-flash");
+        setAiProvider((s.aiProvider as "gemini" | "agentrouter") || "agentrouter");
+        if (s.aiPrimaryProvider) setAiPrimaryProvider(s.aiPrimaryProvider);
+        if (s.aiSecondaryProvider) setAiSecondaryProvider(s.aiSecondaryProvider);
+        if (s.aiTaskChatProvider) setAiTaskChatProvider(s.aiTaskChatProvider);
+        if (s.aiTaskChatModel !== undefined) setAiTaskChatModel(s.aiTaskChatModel);
+        if (s.aiTaskBlogProvider) setAiTaskBlogProvider(s.aiTaskBlogProvider);
+        if (s.aiTaskBlogModel !== undefined) setAiTaskBlogModel(s.aiTaskBlogModel);
+        if (s.aiTaskResearchProvider) setAiTaskResearchProvider(s.aiTaskResearchProvider);
+        if (s.aiTaskResearchModel !== undefined) setAiTaskResearchModel(s.aiTaskResearchModel);
+        if (s.aiTaskAuditProvider) setAiTaskAuditProvider(s.aiTaskAuditProvider);
+        if (s.aiTaskAuditModel !== undefined) setAiTaskAuditModel(s.aiTaskAuditModel);
+        setImageApiKeyMasked(s.imageApiKeyMasked || "");
+        setImageBaseUrl(s.imageBaseUrl || "https://api.hcnsec.cn/v1");
+        setImageModel(s.imageModel || "step-image-edit-2");
+        setAiModel(s.aiModel || "DeepSeek-V4-Flash");
         setAiTemperature(s.aiTemperature ?? 0.7);
         setAiMaxTokens(s.aiMaxTokens ?? 800);
         setAiCustomInstructions(s.aiCustomInstructions || "");
@@ -310,6 +381,18 @@ export default function AdminSettingsPage() {
         agentRouterModel,
         agentRouterReasoningEffort,
         aiProvider,
+        aiPrimaryProvider,
+        aiSecondaryProvider,
+        aiTaskChatProvider,
+        aiTaskChatModel,
+        aiTaskBlogProvider,
+        aiTaskBlogModel,
+        aiTaskResearchProvider,
+        aiTaskResearchModel,
+        aiTaskAuditProvider,
+        aiTaskAuditModel,
+        imageBaseUrl,
+        imageModel,
         aiIncludeServices,
         aiIncludePortfolio,
         aiIncludeBlog,
@@ -333,6 +416,7 @@ export default function AdminSettingsPage() {
       if (newPassword) payload.adminPassword = newPassword;
       if (geminiApiKey) payload.geminiApiKey = geminiApiKey;
       if (agentRouterApiKey) payload.agentRouterApiKey = agentRouterApiKey;
+      if (imageApiKey) payload.imageApiKey = imageApiKey;
       if (resendApiKey) payload.resendApiKey = resendApiKey;
       if (cronSecret) payload.cronSecret = cronSecret;
 
@@ -350,6 +434,7 @@ export default function AdminSettingsPage() {
       setConfirmPassword("");
       setGeminiApiKey("");
       setAgentRouterApiKey("");
+      setImageApiKey("");
       setResendApiKey("");
       setCronSecret("");
       await fetchSettings();
@@ -496,7 +581,7 @@ export default function AdminSettingsPage() {
               : "text-foreground-muted hover:text-foreground hover:bg-card-bg"
           }`}
         >
-          <Sparkles size={18} />
+          <Activity size={18} />
           Audit AI & Knowledge Base
           <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-white/20">Live</span>
         </button>
@@ -753,7 +838,7 @@ export default function AdminSettingsPage() {
                       className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-medium text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm shrink-0"
                     >
                       {testingAi ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                      Test Knowledge Response
+                      Simulate Knowledge Response
                     </button>
                   </div>
 
@@ -761,7 +846,7 @@ export default function AdminSettingsPage() {
                     <div className="p-5 rounded-xl bg-accent/5 border border-accent/20 space-y-3">
                       <div className="flex items-center justify-between text-xs text-foreground-muted">
                         <span className="font-semibold text-accent flex items-center gap-1.5">
-                          <Bot size={16} /> Gemini Response:
+                          <Cpu size={16} /> AI Engine Response:
                         </span>
                         <div className="flex gap-4">
                           {testLatency && <span>Latency: <strong className="text-foreground">{testLatency}ms</strong></span>}
@@ -821,21 +906,524 @@ export default function AdminSettingsPage() {
           {/* TAB 2: AI & API CONFIGURATION */}
           {activeTab === "ai" && (
             <div className="space-y-8">
-              {/* AgentRouter Gateway & DeepSeek Credit-Optimizer Card */}
+              {/* PRIMARY & SECONDARY PROVIDER HIERARCHY SELECTOR */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                      <Layers size={20} className="text-accent" />
+                      AI Provider Routing & Failover Architecture
+                    </h2>
+                    <p className="text-foreground-muted text-xs mt-1">
+                      Choose which engine is your Primary active provider for website chat and drafting, and which serves as the automated Secondary fallback if the primary encounters downtime or errors.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/15 text-accent border border-accent/30">
+                      Active: {aiPrimaryProvider === "agentrouter" ? "Gateway First" : "Gemini First"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                  {/* Primary Selection */}
+                  <div className="p-4 rounded-xl border border-card-border bg-background space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                        <CheckCircle2 size={14} /> Primary Provider (Runs First)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAiPrimaryProvider("agentrouter");
+                          if (aiSecondaryProvider === "agentrouter") setAiSecondaryProvider("gemini");
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiPrimaryProvider === "agentrouter"
+                            ? "border-accent bg-accent/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                          <Zap size={14} className="text-accent" />
+                          OpenAI Gateway
+                        </div>
+                        <p className="text-[11px] text-foreground-muted mt-1">
+                          Hcnsec / DeepSeek / AgentRouter
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAiPrimaryProvider("gemini");
+                          if (aiSecondaryProvider === "gemini") setAiSecondaryProvider("agentrouter");
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiPrimaryProvider === "gemini"
+                            ? "border-accent bg-accent/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                          <Bot size={14} className="text-accent" />
+                          Google Gemini
+                        </div>
+                        <p className="text-[11px] text-foreground-muted mt-1">
+                          Gemini 3.8 / 3.6 Flash
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Secondary Selection (Fallback) */}
+                  <div className="p-4 rounded-xl border border-card-border bg-background space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <ShieldAlert size={14} /> Secondary Provider (Automated Fallback)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAiSecondaryProvider("gemini")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiSecondaryProvider === "gemini"
+                            ? "border-emerald-500 bg-emerald-500/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="font-bold text-xs text-foreground">
+                          Gemini
+                        </div>
+                        <p className="text-[10px] text-foreground-muted mt-0.5">
+                          Failover to Google
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAiSecondaryProvider("agentrouter")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiSecondaryProvider === "agentrouter"
+                            ? "border-emerald-500 bg-emerald-500/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="font-bold text-xs text-foreground">
+                          Gateway
+                        </div>
+                        <p className="text-[10px] text-foreground-muted mt-0.5">
+                          Failover to Gateway
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAiSecondaryProvider("none")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiSecondaryProvider === "none"
+                            ? "border-gray-500 bg-gray-500/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="font-bold text-xs text-foreground">
+                          None
+                        </div>
+                        <p className="text-[10px] text-foreground-muted mt-0.5">
+                          Disable Fallback
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* INDEPENDENT TASK ROUTING & MODEL SPECIALIZATION MATRIX */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                      <SlidersHorizontal size={20} className="text-cyan-400" />
+                      Task-Specific Routing & Model Matrix
+                    </h2>
+                    <p className="text-foreground-muted text-xs mt-1">
+                      Assign specialized AI engines per workload, or keep as Default to inherit platform-wide Primary/Secondary failover.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                    4 Workloads Configured
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {/* WORKLOAD 1: Live Customer Chatbot */}
+                  <div className="p-5 rounded-2xl border border-card-border bg-background/50 space-y-4 hover:border-card-border/80 transition-all">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          <Bot size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground">Live Customer Chatbot</h3>
+                          <p className="text-[11px] text-foreground-muted">Visitor inquiries, interactive FAQ & lead intake</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                          Unlimited Access
+                        </span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                          aiTaskChatProvider === "default" && !aiTaskChatModel
+                            ? "bg-foreground/5 text-foreground-muted border-card-border"
+                            : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                        }`}>
+                          {aiTaskChatProvider === "default" && !aiTaskChatModel ? "Global Defaults" : "Custom Override"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-foreground-muted mb-1.5">
+                          Assigned Provider
+                        </label>
+                        <select
+                          value={aiTaskChatProvider}
+                          onChange={(e) => setAiTaskChatProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        >
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
+                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="gemini">Google Gemini</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted">
+                            Model Selection
+                          </label>
+                          <span className="text-[10px] text-emerald-400 font-mono">Recommended: DeepSeek-V4-Flash</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={aiTaskChatModel}
+                          onChange={(e) => setAiTaskChatModel(e.target.value)}
+                          placeholder="Inherits Global Model (DeepSeek-V4-Flash)"
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-mono focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        />
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {["DeepSeek-V4-Flash", "glm-5.3-flash", "auto"].map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setAiTaskChatModel(m)}
+                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                                  aiTaskChatModel === m
+                                    ? "bg-accent/15 border-accent text-accent font-bold"
+                                    : "border-card-border bg-card-bg text-foreground-muted hover:text-foreground"
+                                }`}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          </div>
+                          {aiTaskChatModel && (
+                            <button
+                              type="button"
+                              onClick={() => setAiTaskChatModel("")}
+                              className="text-[10px] text-foreground-muted hover:text-red-400 underline"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WORKLOAD 2: SEO Article & Blog Writer */}
+                  <div className="p-5 rounded-2xl border border-card-border bg-background/50 space-y-4 hover:border-card-border/80 transition-all">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <FileText size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground">SEO Article & Blog Writer</h3>
+                          <p className="text-[11px] text-foreground-muted">Long-form technical articles, meta tags & schema</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">
+                          Limit: 5/Day {quotas?.blog ? `(${quotas.blog.used}/${quotas.blog.limit} used)` : ""}
+                        </span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                          aiTaskBlogProvider === "default" && !aiTaskBlogModel
+                            ? "bg-foreground/5 text-foreground-muted border-card-border"
+                            : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        }`}>
+                          {aiTaskBlogProvider === "default" && !aiTaskBlogModel ? "Global Defaults" : "Custom Override"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-foreground-muted mb-1.5">
+                          Assigned Provider
+                        </label>
+                        <select
+                          value={aiTaskBlogProvider}
+                          onChange={(e) => setAiTaskBlogProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        >
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
+                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="gemini">Google Gemini</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted">
+                            Model Selection
+                          </label>
+                          <span className="text-[10px] text-emerald-400 font-mono">Recommended: DeepSeek-V4-Flash</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={aiTaskBlogModel}
+                          onChange={(e) => setAiTaskBlogModel(e.target.value)}
+                          placeholder="Inherits Global Model (DeepSeek-V4-Flash)"
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-mono focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        />
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {["DeepSeek-V4-Flash", "DeepSeek-V4-Pro", "kimi-k3"].map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setAiTaskBlogModel(m)}
+                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                                  aiTaskBlogModel === m
+                                    ? "bg-accent/15 border-accent text-accent font-bold"
+                                    : "border-card-border bg-card-bg text-foreground-muted hover:text-foreground"
+                                }`}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          </div>
+                          {aiTaskBlogModel && (
+                            <button
+                              type="button"
+                              onClick={() => setAiTaskBlogModel("")}
+                              className="text-[10px] text-foreground-muted hover:text-red-400 underline"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WORKLOAD 3: Deep Topic Research */}
+                  <div className="p-5 rounded-2xl border border-card-border bg-background/50 space-y-4 hover:border-card-border/80 transition-all">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                          <Search size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground">Deep Topic Research</h3>
+                          <p className="text-[11px] text-foreground-muted">Keyword research, outlines & authoritative citations</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-purple-500/10 text-purple-400 border-purple-500/20">
+                          Limit: 1/Day {quotas?.research ? `(${quotas.research.used}/${quotas.research.limit} used)` : ""}
+                        </span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                          aiTaskResearchProvider === "default" && !aiTaskResearchModel
+                            ? "bg-foreground/5 text-foreground-muted border-card-border"
+                            : "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                        }`}>
+                          {aiTaskResearchProvider === "default" && !aiTaskResearchModel ? "Global Defaults" : "Custom Override"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-foreground-muted mb-1.5">
+                          Assigned Provider
+                        </label>
+                        <select
+                          value={aiTaskResearchProvider}
+                          onChange={(e) => setAiTaskResearchProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        >
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
+                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="gemini">Google Gemini</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted">
+                            Model Selection
+                          </label>
+                          <span className="text-[10px] text-purple-400 font-mono">Recommended: kimi-k3</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={aiTaskResearchModel}
+                          onChange={(e) => setAiTaskResearchModel(e.target.value)}
+                          placeholder="Inherits Global Model (DeepSeek-V4-Flash)"
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-mono focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        />
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {["kimi-k3", "DeepSeek-V4-Flash", "DeepSeek-V4-Pro", "gemini-2.5-flash"].map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setAiTaskResearchModel(m)}
+                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                                  aiTaskResearchModel === m
+                                    ? "bg-accent/15 border-accent text-accent font-bold"
+                                    : "border-card-border bg-card-bg text-foreground-muted hover:text-foreground"
+                                }`}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          </div>
+                          {aiTaskResearchModel && (
+                            <button
+                              type="button"
+                              onClick={() => setAiTaskResearchModel("")}
+                              className="text-[10px] text-foreground-muted hover:text-red-400 underline"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WORKLOAD 4: Project SEO & CRO Audit */}
+                  <div className="p-5 rounded-2xl border border-card-border bg-background/50 space-y-4 hover:border-card-border/80 transition-all">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          <Activity size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground">Portfolio SEO & CRO Audit</h3>
+                          <p className="text-[11px] text-foreground-muted">Project scoring, schema validation & conversion audits</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-400 border-amber-500/20">
+                          Internal Audit · Unlimited
+                        </span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                          aiTaskAuditProvider === "default" && !aiTaskAuditModel
+                            ? "bg-foreground/5 text-foreground-muted border-card-border"
+                            : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        }`}>
+                          {aiTaskAuditProvider === "default" && !aiTaskAuditModel ? "Global Defaults" : "Custom Override"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-foreground-muted mb-1.5">
+                          Assigned Provider
+                        </label>
+                        <select
+                          value={aiTaskAuditProvider}
+                          onChange={(e) => setAiTaskAuditProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        >
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
+                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="gemini">Google Gemini</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted">
+                            Model Selection
+                          </label>
+                          <span className="text-[10px] text-emerald-400 font-mono">Recommended: DeepSeek-V4-Flash</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={aiTaskAuditModel}
+                          onChange={(e) => setAiTaskAuditModel(e.target.value)}
+                          placeholder="Inherits Global Model (DeepSeek-V4-Flash)"
+                          className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-mono focus:outline-none focus:border-accent text-foreground shadow-2xs"
+                        />
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {["DeepSeek-V4-Flash", "auto", "DeepSeek-V4-Pro"].map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setAiTaskAuditModel(m)}
+                                className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                                  aiTaskAuditModel === m
+                                    ? "bg-accent/15 border-accent text-accent font-bold"
+                                    : "border-card-border bg-card-bg text-foreground-muted hover:text-foreground"
+                                }`}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          </div>
+                          {aiTaskAuditModel && (
+                            <button
+                              type="button"
+                              onClick={() => setAiTaskAuditModel("")}
+                              className="text-[10px] text-foreground-muted hover:text-red-400 underline"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* OpenAI-Compatible AI Gateway Card */}
               <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Zap size={20} className="text-accent" />
+                      <Server size={20} className="text-accent" />
                       <h2 className="text-lg font-bold text-foreground">
-                        AgentRouter AI Gateway & Model Optimizer
+                        OpenAI-Compatible AI Gateway
                       </h2>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        DeepSeek First • Lowest Credits
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Active Gateway
                       </span>
                     </div>
                     <p className="text-foreground-muted text-xs mt-1">
-                      Direct connection to <span className="font-mono text-accent">https://agentrouter.org/v1</span>. Always prioritizes low-credit models (<span className="font-semibold text-emerald-400">deepseek-v4-flash</span>) for chatbot, blogging, and admin AI tasks.
+                      Direct upstream connection to <span className="font-mono text-accent">https://api.hcnsec.cn/v1</span>. High availability for DeepSeek, GLM, and Moonshot Kimi workloads.
                     </p>
                   </div>
 
@@ -849,12 +1437,12 @@ export default function AdminSettingsPage() {
                       {checkingModels ? (
                         <>
                           <Loader2 size={14} className="animate-spin" />
-                          <span>Testing DeepSeek & Models...</span>
+                          <span>Verifying Gateway Models...</span>
                         </>
                       ) : (
                         <>
-                          <Gauge size={14} />
-                          <span>Check Available Models (DeepSeek 1st)</span>
+                          <Activity size={14} />
+                          <span>Verify Connectivity</span>
                         </>
                       )}
                     </button>
@@ -865,15 +1453,15 @@ export default function AdminSettingsPage() {
                   {/* Gateway API Key */}
                   <div className="space-y-1.5 md:col-span-2">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                      AgentRouter API Key
+                      Gateway API Key
                     </label>
                     <div className="relative">
                       <input
                         type={showAgentRouterKey ? "text" : "password"}
                         value={agentRouterApiKey}
                         onChange={(e) => setAgentRouterApiKey(e.target.value)}
-                        placeholder={agentRouterMasked || "sk-agentrouter-..."}
-                        className="w-full pl-4 pr-10 py-2 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                        placeholder={agentRouterMasked || "sk-..."}
+                        className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
                       />
                       <button
                         type="button"
@@ -886,7 +1474,7 @@ export default function AdminSettingsPage() {
                     <p className="text-xs text-foreground-muted flex items-center gap-1">
                       {agentRouterMasked ? (
                         <span className="text-emerald-500 font-medium flex items-center gap-1">
-                          <CheckCircle2 size={13} /> Configured: {agentRouterMasked}
+                          <CheckCircle2 size={13} /> Active: {agentRouterMasked}
                         </span>
                       ) : (
                         <span className="text-amber-500 flex items-center gap-1">
@@ -905,8 +1493,8 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={agentRouterBaseUrl}
                       onChange={(e) => setAgentRouterBaseUrl(e.target.value)}
-                      placeholder="https://agentrouter.org/v1"
-                      className="w-full px-3.5 py-2 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                      placeholder="https://api.hcnsec.cn/v1"
+                      className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
                     />
                     <p className="text-[11px] text-foreground-muted">OpenAI-compatible /v1 endpoint</p>
                   </div>
@@ -924,20 +1512,38 @@ export default function AdminSettingsPage() {
                       }}
                       className="w-full px-3 py-2 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent font-medium"
                     >
-                      <option value="deepseek-v4-flash">
-                        DeepSeek V4 Flash (Priority #1 • Lowest Credits)
+                      <option value="DeepSeek-V4-Flash">
+                        DeepSeek-V4-Flash (Fastest • High Reasoning)
+                      </option>
+                      <option value="DeepSeek-V4.1-Flash">
+                        DeepSeek-V4.1-Flash (Next-Gen)
+                      </option>
+                      <option value="DeepSeek-V4-Pro">
+                        DeepSeek-V4-Pro (Deep Thought)
+                      </option>
+                      <option value="glm-5.3-flash">
+                        GLM-5.3-Flash (Zhipu AI)
+                      </option>
+                      <option value="glm-5.3">
+                        GLM-5.3 (Full Tier)
+                      </option>
+                      <option value="kimi-k3">
+                        Kimi-k3 (Moonshot Long Context)
+                      </option>
+                      <option value="step-5-preview">
+                        Step-5-Preview (StepFun Frontier)
+                      </option>
+                      <option value="auto">
+                        Auto (TrustedRouter Dynamic Dispatch)
                       </option>
                       <option value="gpt-5.6-sol">
-                        GPT-5.6 Sol (Medium Reasoning)
+                        GPT-5.6 Sol (AgentRouter)
                       </option>
                       <option value="gpt-6-astra">
-                        GPT-6 Astra (Flagship Frontier)
+                        GPT-6 Astra (AgentRouter)
                       </option>
                       <option value="claude-opus-4-8">
-                        Claude Opus 4.8 (High Precision)
-                      </option>
-                      <option value="claude-opus-5">
-                        Claude Opus 5 (Deep Thought)
+                        Claude Opus 4.8 (AgentRouter)
                       </option>
                     </select>
                     <p className="text-[11px] text-emerald-400 font-medium">
@@ -1046,6 +1652,235 @@ export default function AdminSettingsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* AI Image Generation (StepFun / OpenAI-Compatible) Card */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <ImageIcon size={20} className="text-purple-400" />
+                      <h2 className="text-lg font-bold text-foreground">
+                        AI Image Generation Engine
+                      </h2>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                        StepFun • step-image-edit-2
+                      </span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        Daily Limit: 5 Images / Day
+                      </span>
+                    </div>
+                    <p className="text-foreground-muted text-xs mt-1">
+                      Powers editorial cover illustrations for blog articles, portfolio mockups, and automated daily posts via OpenAI-compatible endpoints.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!testImagePrompt.trim()) {
+                          return toast.error("Please enter a test prompt for image generation.");
+                        }
+                        setIsTestingImage(true);
+                        setTestImageUrl(null);
+                        setTestImageLatency(null);
+                        try {
+                          const res = await fetch("/api/admin/ai/generate-image", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              prompt: testImagePrompt.trim(),
+                              model: imageModel || "step-image-edit-2",
+                              size: "1024x1024",
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok || !data.success) {
+                            throw new Error(data.error || data.details || "Image generation test failed");
+                          }
+                          setTestImageUrl(data.url);
+                          setTestImageLatency(data.latencyMs || null);
+                          toast.success("Test image generated successfully!");
+                        } catch (err: unknown) {
+                          toast.error(err instanceof Error ? err.message : "Failed to generate test image");
+                        } finally {
+                          setIsTestingImage(false);
+                        }
+                      }}
+                      disabled={isTestingImage || !testImagePrompt.trim()}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm shrink-0 disabled:opacity-50"
+                    >
+                      {isTestingImage ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Generating Image...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon size={14} />
+                          <span>Generate Preview Asset</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* API Key */}
+                  <div className="md:col-span-1">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Image API Key
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showImageKey ? "text" : "password"}
+                        value={imageApiKey}
+                        onChange={(e) => setImageApiKey(e.target.value)}
+                        placeholder={imageApiKeyMasked || "sk-..."}
+                        className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowImageKey(!showImageKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                      >
+                        {showImageKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-foreground-muted mt-1.5 flex items-center gap-1">
+                      {imageApiKeyMasked ? (
+                        <span className="text-green-500 font-medium flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Configured: {imageApiKeyMasked}
+                        </span>
+                      ) : (
+                        <span className="text-amber-500 flex items-center gap-1">
+                          <AlertTriangle size={13} /> Fallback to Pollinations AI (Unlimited & Free)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Base URL */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Base URL
+                    </label>
+                    <input
+                      type="text"
+                      value={imageBaseUrl}
+                      onChange={(e) => setImageBaseUrl(e.target.value)}
+                      placeholder="https://api.hcnsec.cn/v1"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-[11px] text-foreground-muted mt-1">
+                      OpenAI-compatible image endpoint base URL
+                    </p>
+                  </div>
+
+                  {/* Model */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted mb-2">
+                      Image Model
+                    </label>
+                    <input
+                      type="text"
+                      value={imageModel}
+                      onChange={(e) => setImageModel(e.target.value)}
+                      placeholder="step-image-edit-2"
+                      className="w-full px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-[11px] text-foreground-muted mt-1">
+                      Default: <span className="font-semibold text-purple-400">step-image-edit-2</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Playground / Tester */}
+                <div className="pt-4 border-t border-card-border/60 space-y-3">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                    Interactive Image Prompt Tester
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={testImagePrompt}
+                      onChange={(e) => setTestImagePrompt(e.target.value)}
+                      placeholder="Enter a prompt to test image generation..."
+                      className="flex-1 px-4 py-2.5 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!testImagePrompt.trim()) {
+                          return toast.error("Please enter a test prompt for image generation.");
+                        }
+                        setIsTestingImage(true);
+                        setTestImageUrl(null);
+                        setTestImageLatency(null);
+                        try {
+                          const res = await fetch("/api/admin/ai/generate-image", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              prompt: testImagePrompt.trim(),
+                              model: imageModel || "step-image-edit-2",
+                              size: "1024x1024",
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok || !data.success) {
+                            throw new Error(data.error || data.details || "Image generation test failed");
+                          }
+                          setTestImageUrl(data.url);
+                          setTestImageLatency(data.latencyMs || null);
+                          toast.success("Test image generated successfully!");
+                        } catch (err: unknown) {
+                          toast.error(err instanceof Error ? err.message : "Failed to generate test image");
+                        } finally {
+                          setIsTestingImage(false);
+                        }
+                      }}
+                      disabled={isTestingImage || !testImagePrompt.trim()}
+                      className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
+                    >
+                      {isTestingImage ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />}
+                      <span>Generate Sample</span>
+                    </button>
+                  </div>
+
+                  {/* Preview Result */}
+                  {testImageUrl && (
+                    <div className="mt-4 p-4 rounded-xl bg-background border border-card-border space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-foreground flex items-center gap-1.5">
+                          <CheckCircle2 size={14} className="text-green-500" />
+                          Generated Image Output (1024x1024)
+                        </span>
+                        {testImageLatency && (
+                          <span className="text-foreground-muted font-mono text-[11px]">
+                            {testImageLatency}ms
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative rounded-lg overflow-hidden border border-card-border max-w-md mx-auto group">
+                        <img
+                          src={testImageUrl}
+                          alt="Test Generation Preview"
+                          className="w-full h-auto object-cover rounded-lg"
+                        />
+                        <a
+                          href={testImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity"
+                        >
+                          Open Full Resolution ↗
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Two Column Section: Gemini Fallback & Resend Email */}
@@ -1248,7 +2083,7 @@ export default function AdminSettingsPage() {
 
                                 {m.recommended && (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
-                                    <Star size={10} className="fill-accent" />
+                                    <CheckCircle2 size={10} className="text-accent" />
                                     DEFAULT
                                   </span>
                                 )}
@@ -1289,7 +2124,7 @@ export default function AdminSettingsPage() {
                               </div>
                               <div className="flex items-center justify-between text-foreground-muted">
                                 <span className="flex items-center gap-1">
-                                  <Sparkles size={11} className={isFree ? "text-emerald-400" : "text-purple-400"} />
+                                  <DollarSign size={11} className={isFree ? "text-emerald-400" : "text-purple-400"} />
                                   Cost:
                                 </span>
                                 <span className={cn("font-semibold", isFree ? "text-emerald-400" : "text-purple-400")}>
@@ -1950,7 +2785,7 @@ export default function AdminSettingsPage() {
                 <div className="max-w-2xl mx-auto text-center py-4">
                   {/* Badge Preview */}
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-card-border bg-card-bg text-foreground text-xs font-medium mb-5 shadow-xs">
-                    <Sparkles size={12} className="text-accent" />
+                    <Cpu size={12} className="text-accent" />
                     <span>{heroBadge || "Badge Text"}</span>
                   </div>
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { constantTimeEqual } from "@/lib/session";
 import { getSetting } from "@/lib/settings";
-import { executeAiCompletion } from "@/lib/aiClient";
+import { executeAiCompletion, generateAiImage } from "@/lib/aiClient";
 
 // This should be triggered by a Cron service (like Vercel Cron or GitHub Actions)
 export async function GET(req: Request) {
@@ -36,6 +36,7 @@ export async function GET(req: Request) {
       prompt: topicPrompt,
       temperature: 0.9,
       maxTokens: 100,
+      task: "blog",
     });
     
     const topic = topicResult.text.trim() || "The Future of AI Automation";
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
       prompt: writePrompt,
       temperature: 0.7,
       maxTokens: 2500,
+      task: "blog",
     });
 
     const markdown = writeResult.text;
@@ -73,9 +75,19 @@ export async function GET(req: Request) {
       .replace(/<category>[\s\S]*?<\/category>/g, "")
       .trim();
 
-    // 4. Generate Cover Image (Keyless via Pollinations)
-    const imagePrompt = encodeURIComponent(`${title} modern technology abstract high quality 4k digital art`);
-    const imageUrl = `https://image.pollinations.ai/prompt/${imagePrompt}?width=1200&height=630&nologo=true`;
+    // 4. Generate Cover Image (StepFun AI with Pollinations fallback)
+    let imageUrl: string;
+    try {
+      const imgRes = await generateAiImage({
+        prompt: `${title}, modern clean tech digital illustration, 4k digital art`,
+        size: "1024x1024",
+      });
+      imageUrl = imgRes.url;
+    } catch (imgErr) {
+      console.warn("AI image generation fallback in daily blog cron:", imgErr);
+      const imagePrompt = encodeURIComponent(`${title} modern technology abstract high quality 4k digital art`);
+      imageUrl = `https://image.pollinations.ai/prompt/${imagePrompt}?width=1200&height=630&nologo=true`;
+    }
 
     // 5. Generate Slug
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");

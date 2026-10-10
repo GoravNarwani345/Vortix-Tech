@@ -7,6 +7,7 @@ import {
   AppSettings,
 } from "@/lib/settings";
 import { syncAiKnowledge } from "@/lib/aiKnowledge";
+import { getAllDailyQuotas } from "@/lib/workloadQuota";
 
 export async function GET() {
   if (!(await isAuthenticated())) {
@@ -33,6 +34,17 @@ export async function GET() {
       stored.RESEND_API_KEY || process.env.RESEND_API_KEY || "";
     const rawCronSecret =
       stored.CRON_SECRET || process.env.CRON_SECRET || "";
+    const rawImageKey =
+      stored.IMAGE_API_KEY ||
+      process.env.IMAGE_API_KEY ||
+      process.env.NEW_API_KEY ||
+      "";
+    const effectiveImageBaseUrl =
+      stored.IMAGE_BASE_URL ||
+      process.env.IMAGE_BASE_URL ||
+      "https://api.hcnsec.cn/v1";
+    const effectiveImageModel =
+      stored.IMAGE_MODEL || process.env.IMAGE_MODEL || "step-image-edit-2";
 
     const publicSettings = {
       adminEmail: effectiveAdminEmail,
@@ -46,13 +58,28 @@ export async function GET() {
       agentRouterBaseUrl: effectiveAgentRouterBaseUrl,
       agentRouterModel: effectiveAgentRouterModel,
       agentRouterReasoningEffort: stored.AGENTROUTER_REASONING_EFFORT || process.env.AGENTROUTER_REASONING_EFFORT || "medium",
-      aiProvider: stored.AI_PROVIDER || (rawAgentRouterKey ? "agentrouter" : "gemini"),
+      aiProvider: stored.AI_PROVIDER || "agentrouter",
+      aiPrimaryProvider: stored.AI_PRIMARY_PROVIDER || "agentrouter",
+      aiSecondaryProvider: stored.AI_SECONDARY_PROVIDER || (rawGeminiKey ? "gemini" : "none"),
+      // Per-Task Specialization Routing Matrix
+      aiTaskChatProvider: stored.AI_TASK_CHAT_PROVIDER || "default",
+      aiTaskChatModel: stored.AI_TASK_CHAT_MODEL || "",
+      aiTaskBlogProvider: stored.AI_TASK_BLOG_PROVIDER || "default",
+      aiTaskBlogModel: stored.AI_TASK_BLOG_MODEL || "",
+      aiTaskResearchProvider: stored.AI_TASK_RESEARCH_PROVIDER || "default",
+      aiTaskResearchModel: stored.AI_TASK_RESEARCH_MODEL || "",
+      aiTaskAuditProvider: stored.AI_TASK_AUDIT_PROVIDER || "default",
+      aiTaskAuditModel: stored.AI_TASK_AUDIT_MODEL || "",
+      imageApiKeyMasked: maskSecret(rawImageKey),
+      hasImageApiKey: Boolean(rawImageKey),
+      imageBaseUrl: effectiveImageBaseUrl,
+      imageModel: effectiveImageModel,
       resendApiKeyMasked: maskSecret(rawResendKey),
       hasResendApiKey: Boolean(rawResendKey),
       contactEmail: effectiveContactEmail,
       cronSecretMasked: maskSecret(rawCronSecret),
       hasCronSecret: Boolean(rawCronSecret),
-      aiModel: stored.AI_MODEL || "deepseek-v4-flash",
+      aiModel: stored.AI_MODEL || "DeepSeek-V4-Flash",
       aiTemperature: stored.AI_TEMPERATURE ?? 0.7,
       aiMaxTokens: stored.AI_MAX_TOKENS ?? 800,
       aiCustomInstructions: stored.AI_CUSTOM_INSTRUCTIONS || "",
@@ -76,7 +103,9 @@ export async function GET() {
       heroSecondaryCta: stored.HERO_SECONDARY_CTA || "Explore Services",
     };
 
-    return NextResponse.json({ success: true, settings: publicSettings });
+    const quotas = await getAllDailyQuotas();
+
+    return NextResponse.json({ success: true, settings: publicSettings, quotas });
   } catch (error) {
     console.error("Settings GET error:", error);
     return NextResponse.json(
@@ -129,8 +158,59 @@ export async function POST(req: Request) {
       updates.AGENTROUTER_REASONING_EFFORT = body.agentRouterReasoningEffort;
     }
 
+    if (
+      typeof body.imageApiKey === "string" &&
+      body.imageApiKey.trim() &&
+      !body.imageApiKey.includes("•")
+    ) {
+      updates.IMAGE_API_KEY = body.imageApiKey.trim();
+    }
+
+    if (typeof body.imageBaseUrl === "string" && body.imageBaseUrl.trim()) {
+      updates.IMAGE_BASE_URL = body.imageBaseUrl.trim();
+    }
+
+    if (typeof body.imageModel === "string" && body.imageModel.trim()) {
+      updates.IMAGE_MODEL = body.imageModel.trim();
+    }
+
     if (typeof body.aiProvider === "string") {
       updates.AI_PROVIDER = body.aiProvider as "gemini" | "agentrouter";
+    }
+
+    if (typeof body.aiPrimaryProvider === "string") {
+      updates.AI_PRIMARY_PROVIDER = body.aiPrimaryProvider as "agentrouter" | "gemini";
+      updates.AI_PROVIDER = updates.AI_PRIMARY_PROVIDER;
+    }
+
+    if (typeof body.aiSecondaryProvider === "string") {
+      updates.AI_SECONDARY_PROVIDER = body.aiSecondaryProvider as "gemini" | "agentrouter" | "none";
+    }
+
+    // Task-specific routing updates
+    if (typeof body.aiTaskChatProvider === "string") {
+      updates.AI_TASK_CHAT_PROVIDER = body.aiTaskChatProvider as "default" | "agentrouter" | "gemini";
+    }
+    if (typeof body.aiTaskChatModel === "string") {
+      updates.AI_TASK_CHAT_MODEL = body.aiTaskChatModel.trim();
+    }
+    if (typeof body.aiTaskBlogProvider === "string") {
+      updates.AI_TASK_BLOG_PROVIDER = body.aiTaskBlogProvider as "default" | "agentrouter" | "gemini";
+    }
+    if (typeof body.aiTaskBlogModel === "string") {
+      updates.AI_TASK_BLOG_MODEL = body.aiTaskBlogModel.trim();
+    }
+    if (typeof body.aiTaskResearchProvider === "string") {
+      updates.AI_TASK_RESEARCH_PROVIDER = body.aiTaskResearchProvider as "default" | "agentrouter" | "gemini";
+    }
+    if (typeof body.aiTaskResearchModel === "string") {
+      updates.AI_TASK_RESEARCH_MODEL = body.aiTaskResearchModel.trim();
+    }
+    if (typeof body.aiTaskAuditProvider === "string") {
+      updates.AI_TASK_AUDIT_PROVIDER = body.aiTaskAuditProvider as "default" | "agentrouter" | "gemini";
+    }
+    if (typeof body.aiTaskAuditModel === "string") {
+      updates.AI_TASK_AUDIT_MODEL = body.aiTaskAuditModel.trim();
     }
 
     if (typeof body.resendApiKey === "string" && body.resendApiKey.trim()) {

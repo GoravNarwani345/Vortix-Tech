@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
 import { executeAiCompletion } from "@/lib/aiClient";
+import { checkDailyQuota, incrementDailyQuota } from "@/lib/workloadQuota";
 
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
@@ -8,6 +9,16 @@ export async function POST(req: Request) {
   }
 
   try {
+    const quota = await checkDailyQuota("blog");
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: `Daily blog writing quota reached (${quota.used}/${quota.limit} articles generated today). Resets at midnight UTC.`,
+          quota,
+        },
+        { status: 429 }
+      );
+    }
     const {
       topic,
       customPrompt,
@@ -101,6 +112,7 @@ MANDATORY EDITORIAL & FORMATTING RULES:
       prompt,
       temperature: 0.7,
       maxTokens: 4000,
+      task: "blog",
     });
 
     const rawMarkdown = aiResult.text;
@@ -139,8 +151,11 @@ MANDATORY EDITORIAL & FORMATTING RULES:
     const wordCount = cleanMarkdown.split(/\s+/).filter(Boolean).length;
     const readTime = `${Math.max(3, Math.ceil(wordCount / 200))} min read`;
 
+    const updatedQuota = await incrementDailyQuota("blog");
+
     return NextResponse.json({
       success: true,
+      quota: updatedQuota,
       article: {
         title,
         excerpt,

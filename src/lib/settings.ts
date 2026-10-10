@@ -10,6 +10,20 @@ export type AppSettings = {
   AGENTROUTER_MODEL?: string;
   AGENTROUTER_REASONING_EFFORT?: string;
   AI_PROVIDER?: "gemini" | "agentrouter" | "auto";
+  AI_PRIMARY_PROVIDER?: "agentrouter" | "gemini";
+  AI_SECONDARY_PROVIDER?: "gemini" | "agentrouter" | "none";
+  // Task-specific routing configuration
+  AI_TASK_CHAT_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_CHAT_MODEL?: string;
+  AI_TASK_BLOG_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_BLOG_MODEL?: string;
+  AI_TASK_RESEARCH_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_RESEARCH_MODEL?: string;
+  AI_TASK_AUDIT_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_AUDIT_MODEL?: string;
+  IMAGE_API_KEY?: string;
+  IMAGE_BASE_URL?: string;
+  IMAGE_MODEL?: string;
   RESEND_API_KEY?: string;
   CONTACT_EMAIL?: string;
   CRON_SECRET?: string;
