@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url: `https://vortixtech.com/blog/${article.slug}`,
       images: [
         {
-          url: article.image,
+          url: article.image && article.image.trim() !== "" ? article.image : "https://vortixtech.com/opengraph-image",
           width: 1200,
           height: 630,
           alt: article.title,
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       card: "summary_large_image",
       title: article.title,
       description: article.excerpt,
-      images: [article.image],
+      images: [article.image && article.image.trim() !== "" ? article.image : "https://vortixtech.com/opengraph-image"],
     },
   };
 }
@@ -80,7 +80,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             "@context": "https://schema.org",
             "@type": "Article",
             headline: article.title,
-            image: [article.image],
+            image: [article.image && article.image.trim() !== "" ? article.image : "https://vortixtech.com/opengraph-image"],
             datePublished: article.createdAt.toISOString(),
             dateModified: article.updatedAt.toISOString(),
             author: [{
@@ -137,16 +137,18 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Article Content */}
       <section className="py-20">
         <div className="container-custom max-w-4xl mx-auto">
-          <div className="w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-16 shadow-md relative">
-            <Image 
-              src={article.image} 
-              alt={article.title}
-              fill
-              priority
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 896px"
-            />
-          </div>
+          {article.image && article.image.trim() !== "" && (
+            <div className="w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-16 shadow-md relative">
+              <Image 
+                src={article.image} 
+                alt={article.title}
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 896px"
+              />
+            </div>
+          )}
 
           <ArticleContent content={article.content} />
         </div>
