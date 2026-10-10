@@ -12,11 +12,63 @@ import {
   ArrowDown,
   Code2,
   Eye,
+  Link2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { MermaidDiagram } from "./MermaidDiagram";
+import { ArticleCallout, CalloutType } from "./ArticleCallout";
+import { ArticleSelectionShare } from "./ArticleSelectionShare";
 
 interface ArticleContentProps {
   content: string;
+}
+
+function HeadingWithAnchor({
+  level,
+  children,
+  className,
+}: {
+  level: 2 | 3 | 4;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const text = React.Children.toArray(children)
+    .map((c) => (typeof c === "string" ? c : ""))
+    .join("");
+  const id = text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+
+  const handleCopyLink = async () => {
+    if (!id) return;
+    const url = `${window.location.origin}${window.location.pathname}#${id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Section link copied to clipboard!");
+    } catch {
+      // Ignore clipboard error
+    }
+  };
+
+  const Tag = level === 2 ? "h2" : level === 3 ? "h3" : "h4";
+
+  return (
+    <Tag id={id} className={`group relative flex items-center justify-between sm:justify-start ${className || ""}`}>
+      <span>{children}</span>
+      {id && (
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          aria-label="Copy link to section"
+          className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 p-1 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
+          title="Copy link to section"
+        >
+          <Link2 size={16} />
+        </button>
+      )}
+    </Tag>
+  );
 }
 
 export type ArchitectureStage = {
@@ -390,7 +442,8 @@ function CodeBlock({ children, className }: { children: React.ReactNode; classNa
 
 export function ArticleContent({ content }: ArticleContentProps) {
   return (
-    <div className="article-rendered-body max-w-none text-gray-700 leading-relaxed space-y-6 pb-20">
+    <div className="article-rendered-body relative max-w-none text-gray-700 leading-relaxed space-y-6 pb-20">
+      <ArticleSelectionShare />
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -436,7 +489,7 @@ export function ArticleContent({ content }: ArticleContentProps) {
             if (isInline) {
               return (
                 <code
-                  className="px-1.5 py-0.5 rounded-md bg-gray-100 text-indigo-700 font-mono text-xs font-semibold border border-gray-200"
+                  className="px-1.5 py-0.5 rounded-md bg-gray-100 text-blue-700 font-mono text-xs font-semibold border border-gray-200"
                   {...props}
                 >
                   {children}
@@ -449,21 +502,55 @@ export function ArticleContent({ content }: ArticleContentProps) {
               </code>
             );
           },
-          h1: ({ ...props }) => (
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-gray-900 mt-12 mb-6 pb-3 border-b border-gray-200" {...props} />
+          h1: ({ children, ...props }) => (
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-gray-900 mt-12 mb-6 pb-3 border-b border-gray-200" {...props}>
+              {children}
+            </h1>
           ),
-          h2: ({ ...props }) => (
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 mt-10 mb-4 pb-2 border-b border-gray-100" {...props} />
+          h2: ({ children }) => (
+            <HeadingWithAnchor level={2} className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 mt-10 mb-4 pb-2 border-b border-gray-100">
+              {children}
+            </HeadingWithAnchor>
           ),
-          h3: ({ ...props }) => (
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-8 mb-3" {...props} />
+          h3: ({ children }) => (
+            <HeadingWithAnchor level={3} className="text-xl sm:text-2xl font-bold text-gray-900 mt-8 mb-3">
+              {children}
+            </HeadingWithAnchor>
           ),
-          h4: ({ ...props }) => (
-            <h4 className="text-lg font-bold text-gray-900 mt-6 mb-2" {...props} />
+          h4: ({ children }) => (
+            <HeadingWithAnchor level={4} className="text-lg font-bold text-gray-900 mt-6 mb-2">
+              {children}
+            </HeadingWithAnchor>
           ),
-          blockquote: ({ ...props }) => (
-            <blockquote className="my-6 pl-4 pr-3 py-3 border-l-4 border-indigo-600 bg-indigo-50/50 rounded-r-xl italic text-gray-800 text-base" {...props} />
-          ),
+          blockquote: ({ children, ...props }) => {
+            const rawText = React.Children.toArray(children)
+              .map((c) => {
+                if (typeof c === "string") return c;
+                if (React.isValidElement(c) && (c.props as { children?: React.ReactNode }).children) {
+                  const inner = (c.props as { children?: React.ReactNode }).children;
+                  return Array.isArray(inner) ? inner.join(" ") : String(inner);
+                }
+                return "";
+              })
+              .join(" ")
+              .trim();
+
+            if (/^(\[!NOTE\]|:::note)/i.test(rawText)) {
+              return <ArticleCallout type="note">{children}</ArticleCallout>;
+            }
+            if (/^(\[!TIP\]|:::milestone)/i.test(rawText)) {
+              return <ArticleCallout type="milestone">{children}</ArticleCallout>;
+            }
+            if (/^(\[!CAUTION\]|\[!WARNING\]|:::caveat)/i.test(rawText)) {
+              return <ArticleCallout type="caveat">{children}</ArticleCallout>;
+            }
+
+            return (
+              <blockquote className="my-6 pl-4 pr-3 py-3 border-l-4 border-blue-600 bg-blue-50/40 rounded-r-xl italic text-gray-800 text-base" {...props}>
+                {children}
+              </blockquote>
+            );
+          },
           ul: ({ ...props }) => (
             <ul className="my-4 ml-6 list-disc space-y-2 text-gray-700 leading-relaxed text-base" {...props} />
           ),
@@ -477,7 +564,7 @@ export function ArticleContent({ content }: ArticleContentProps) {
             <p className="my-4 text-base sm:text-lg leading-relaxed text-gray-700 font-normal" {...props} />
           ),
           a: ({ ...props }) => (
-            <a className="text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-4 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />
+            <a className="text-blue-600 hover:text-blue-800 font-medium underline underline-offset-4 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />
           ),
           hr: ({ ...props }) => (
             <hr className="my-10 border-gray-200" {...props} />
