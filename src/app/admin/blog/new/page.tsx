@@ -197,9 +197,19 @@ export default function NewBlogPage() {
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: { success?: boolean; error?: string; details?: string; article?: any; quota?: any };
+      try {
+        data = JSON.parse(text);
+      } catch {
+        if (res.status === 504) {
+          throw new Error("The AI generation timed out (504 Gateway Timeout). Please choose a faster model in Admin Settings.");
+        }
+        throw new Error(`Server returned HTTP ${res.status}: ${text.slice(0, 120)}`);
+      }
+
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to generate article");
+        throw new Error(data.error || data.details || "Failed to generate article");
       }
 
       const generated = data.article;

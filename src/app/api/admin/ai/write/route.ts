@@ -3,6 +3,8 @@ import { isAuthenticated } from "@/lib/auth";
 import { executeAiCompletion } from "@/lib/aiClient";
 import { checkDailyQuota, incrementDailyQuota } from "@/lib/workloadQuota";
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -111,7 +113,7 @@ MANDATORY EDITORIAL & FORMATTING RULES:
     const aiResult = await executeAiCompletion({
       prompt,
       temperature: 0.7,
-      maxTokens: 4000,
+      maxTokens: 2500,
       task: "blog",
     });
 

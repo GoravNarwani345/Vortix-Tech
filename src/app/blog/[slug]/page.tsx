@@ -7,6 +7,7 @@ import { ArticleProgressBar } from "@/components/blog/ArticleProgressBar";
 import { ArticleTOC } from "@/components/blog/ArticleTOC";
 import { ArticleTakeaways } from "@/components/blog/ArticleTakeaways";
 import { ArticleStickyCTA } from "@/components/blog/ArticleStickyCTA";
+import { BlogCardImage } from "@/components/blog/BlogCardImage";
 import { Metadata } from "next";
 import Image from "next/image";
 
@@ -153,30 +154,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
             {/* Main Article Body */}
             <div className="flex-1 min-w-0 max-w-3xl">
-              {/* Cover Visual */}
-              {article.image && article.image.trim() !== "" ? (
-                <div className="w-full h-[300px] sm:h-[400px] md:h-[460px] rounded-2xl overflow-hidden mb-10 shadow-md relative border border-gray-100">
-                  <Image 
-                    src={article.image} 
-                    alt={article.title}
-                    fill
-                    priority
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 896px"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-44 sm:h-56 rounded-2xl mb-10 overflow-hidden relative bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 border border-slate-800 flex items-center justify-center p-6 shadow-xs">
-                  <div className="text-center max-w-lg">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30">
-                      Technical Architecture Blueprint
-                    </span>
-                    <h2 className="text-lg sm:text-xl font-serif font-bold text-white mt-3 truncate px-4">
-                      {article.title}
-                    </h2>
-                  </div>
-                </div>
-              )}
+              {/* Cover Visual with self-healing fallback */}
+              <div className="w-full h-[300px] sm:h-[400px] md:h-[460px] rounded-2xl overflow-hidden mb-10 shadow-md relative border border-gray-100">
+                <BlogCardImage
+                  src={article.image}
+                  alt={article.title}
+                  category={article.category}
+                  variant="detail"
+                />
+              </div>
 
               {/* Key Takeaways Card */}
               {article.excerpt && (

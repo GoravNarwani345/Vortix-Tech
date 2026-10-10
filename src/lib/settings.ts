@@ -5,6 +5,7 @@ export type AppSettings = {
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD?: string;
   GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
   AGENTROUTER_API_KEY?: string;
   AGENTROUTER_BASE_URL?: string;
   AGENTROUTER_MODEL?: string;

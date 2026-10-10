@@ -83,9 +83,19 @@ export default function EditBlogPage() {
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: { success?: boolean; error?: string; details?: string; article?: any };
+      try {
+        data = JSON.parse(text);
+      } catch {
+        if (res.status === 504) {
+          throw new Error("The AI rewriting timed out (504 Gateway Timeout). Please choose a faster model in Admin Settings.");
+        }
+        throw new Error(`Server returned HTTP ${res.status}: ${text.slice(0, 120)}`);
+      }
+
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to rewrite article");
+        throw new Error(data.error || data.details || "Failed to rewrite article");
       }
 
       setArticle((prev) => ({

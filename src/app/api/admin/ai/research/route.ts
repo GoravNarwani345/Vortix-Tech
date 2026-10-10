@@ -19,6 +19,8 @@ export type ResearchResult = {
   };
 };
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

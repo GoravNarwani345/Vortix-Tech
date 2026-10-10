@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Clock, User, Tag } from "lucide-react";
+import { BlogCardImage } from "@/components/blog/BlogCardImage";
 
 type Post = {
   id: string;
@@ -58,12 +59,12 @@ export default function BlogContent({ posts }: { posts: Post[] }) {
               <Link href={`/blog/${posts[0].slug}`}>
                 <div className="premium-card group overflow-hidden grid lg:grid-cols-2 bg-white">
                   <div className="relative h-[300px] lg:h-[400px] overflow-hidden">
-                    <img
+                    <BlogCardImage
                       src={posts[0].image}
                       alt={posts[0].title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      category={posts[0].category}
+                      variant="featured"
                     />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
                   </div>
                   
                   <div className="p-8 lg:p-12 flex flex-col justify-center">
@@ -118,12 +119,13 @@ export default function BlogContent({ posts }: { posts: Post[] }) {
                 <Link href={`/blog/${post.slug}`}>
                   <div className="premium-card group h-full flex flex-col bg-white overflow-hidden">
                     <div className="relative h-60 overflow-hidden">
-                      <img
+                      <BlogCardImage
                         src={post.image}
                         alt={post.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        category={post.category}
+                        variant="grid"
                       />
-                      <div className="absolute top-4 left-4">
+                      <div className="absolute top-4 left-4 z-20">
                         <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
                           {post.category}
                         </span>

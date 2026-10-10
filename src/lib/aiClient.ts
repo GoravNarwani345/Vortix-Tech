@@ -142,21 +142,65 @@ export async function resolveTaskRouting(
   const effectiveSecondary: "gateway" | "agentrouter" | "gemini" | "none" =
     globalSecondary as "gateway" | "agentrouter" | "gemini" | "none";
 
+  let defaultModelForPrimary = "DeepSeek-V4-Flash";
+  if (effectivePrimary === "agentrouter") {
+    defaultModelForPrimary =
+      (await getSetting("AGENTROUTER_MODEL")) ||
+      process.env.AGENTROUTER_MODEL ||
+      "deepseek-v4-flash";
+  } else if (effectivePrimary === "gemini") {
+    defaultModelForPrimary =
+      (await getSetting("GEMINI_MODEL")) ||
+      process.env.GEMINI_MODEL ||
+      "gemini-2.5-flash";
+  } else {
+    defaultModelForPrimary =
+      (await getSetting("GATEWAY_MODEL")) ||
+      process.env.GATEWAY_MODEL ||
+      (await getSetting("AI_MODEL")) ||
+      "DeepSeek-V4-Flash";
+  }
+
   const effectiveModel =
     overrideModel ||
     (taskModel && taskModel.trim() !== "" ? taskModel.trim() : null) ||
-    (await getSetting("GATEWAY_MODEL")) ||
-    process.env.GATEWAY_MODEL ||
-    (await getSetting("AGENTROUTER_MODEL")) ||
-    process.env.AGENTROUTER_MODEL ||
-    (await getSetting("AI_MODEL")) ||
-    "DeepSeek-V4-Flash";
+    defaultModelForPrimary;
 
   return {
     effectivePrimary,
     effectiveSecondary,
     effectiveModel,
   };
+}
+
+export async function getProviderModel(
+  prov: "gateway" | "agentrouter" | "gemini",
+  overrideModel?: string,
+  taskModel?: string
+): Promise<string> {
+  if (overrideModel && overrideModel.trim()) return overrideModel.trim();
+  if (taskModel && taskModel.trim()) return taskModel.trim();
+
+  if (prov === "agentrouter") {
+    return (
+      (await getSetting("AGENTROUTER_MODEL")) ||
+      process.env.AGENTROUTER_MODEL ||
+      "deepseek-v4-flash"
+    );
+  }
+  if (prov === "gemini") {
+    return (
+      (await getSetting("GEMINI_MODEL")) ||
+      process.env.GEMINI_MODEL ||
+      "gemini-2.5-flash"
+    );
+  }
+  return (
+    (await getSetting("GATEWAY_MODEL")) ||
+    process.env.GATEWAY_MODEL ||
+    (await getSetting("AI_MODEL")) ||
+    "DeepSeek-V4-Flash"
+  );
 }
 
 /**
@@ -243,8 +287,21 @@ export async function executeAiChat(
         const activeKey = isGateway ? gatewayKey : agentRouterKey;
         const activeBaseUrl = isGateway ? gatewayBaseUrl : agentRouterBaseUrl;
 
-        const startTime = Date.now();
-        const endpoint = `${activeBaseUrl.replace(/\/+$/, "")}/chat/completions`;
+        const baseModel = await getProviderModel(prov, options.model);
+        const modelsQueue = [baseModel];
+        if (isGateway) {
+          for (const fb of ["glm-5.3-flash", "kimi-k3", "DeepSeek-V4-Pro", "auto"]) {
+            if (!modelsQueue.some((m) => m.toLowerCase() === fb.toLowerCase())) {
+              modelsQueue.push(fb);
+            }
+          }
+        } else {
+          for (const fb of ["deepseek-v4-flash", "gpt-5.6-sol", "auto"]) {
+            if (!modelsQueue.some((m) => m.toLowerCase() === fb.toLowerCase())) {
+              modelsQueue.push(fb);
+            }
+          }
+        }
 
         const openAiMessages = [
           ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
@@ -254,54 +311,72 @@ export async function executeAiChat(
           })),
         ];
 
-        const isDeepSeek = configuredModel.toLowerCase().includes("deepseek");
-        const payload: Record<string, unknown> = {
-          model: configuredModel,
-          messages: openAiMessages,
-          max_tokens: maxTokens,
-        };
+        let modelAttemptError: Error | null = null;
+        for (const modelToTry of modelsQueue) {
+          const startTime = Date.now();
+          const endpoint = `${activeBaseUrl.replace(/\/+$/, "")}/chat/completions`;
 
-        if (!isDeepSeek && reasoningEffort) {
-          payload.reasoning_effort = reasoningEffort;
-        } else {
-          payload.temperature = temperature;
-        }
-
-        const reqHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${activeKey}`,
-        };
-        if (!isGateway && activeBaseUrl.includes("agentrouter.org")) {
-          Object.assign(reqHeaders, AGENTROUTER_HEADERS);
-        }
-
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: reqHeaders,
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content || "";
-          return {
-            text,
-            latencyMs: Date.now() - startTime,
-            provider: prov,
-            modelUsed: configuredModel,
-            usage: {
-              promptTokens: data.usage?.prompt_tokens,
-              completionTokens: data.usage?.completion_tokens,
-              totalTokens: data.usage?.total_tokens,
-            },
+          const isDeepSeek = modelToTry.toLowerCase().includes("deepseek");
+          const payload: Record<string, unknown> = {
+            model: modelToTry,
+            messages: openAiMessages,
+            max_tokens: maxTokens,
           };
-        } else {
-          const errText = await res.text();
-          throw new Error(`Gateway Error (${res.status}): ${errText}`);
+
+          if (!isDeepSeek && reasoningEffort) {
+            payload.reasoning_effort = reasoningEffort;
+          } else {
+            payload.temperature = temperature;
+          }
+
+          const reqHeaders: Record<string, string> = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${activeKey}`,
+          };
+          if (!isGateway && activeBaseUrl.includes("agentrouter.org")) {
+            Object.assign(reqHeaders, AGENTROUTER_HEADERS);
+          }
+
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: reqHeaders,
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content || "";
+            return {
+              text,
+              latencyMs: Date.now() - startTime,
+              provider: prov,
+              modelUsed: modelToTry,
+              usage: {
+                promptTokens: data.usage?.prompt_tokens,
+                completionTokens: data.usage?.completion_tokens,
+                totalTokens: data.usage?.total_tokens,
+              },
+            };
+          } else {
+            const errText = await res.text();
+            modelAttemptError = new Error(`Gateway Error (${res.status}): ${errText}`);
+            const isModelPermissionOrNotFoundError =
+              res.status === 403 ||
+              res.status === 404 ||
+              errText.includes("无权访问模型") ||
+              errText.includes("model_not_found") ||
+              errText.includes("does not exist");
+            if (isModelPermissionOrNotFoundError) {
+              console.warn(`Model ${modelToTry} on [${prov}] returned ${res.status}. Attempting candidate model fallback...`);
+              continue;
+            } else {
+              break;
+            }
+          }
         }
+        if (modelAttemptError) throw modelAttemptError;
       } else if (prov === "gemini") {
-        const geminiModel =
-          isAgentRouterModel(configuredModel) ? "gemini-3.6-flash" : configuredModel;
+        const geminiModel = await getProviderModel("gemini", options.model);
 
         const startTime = Date.now();
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;
@@ -395,10 +470,8 @@ export async function executeAiCompletion(
     process.env.AGENTROUTER_BASE_URL ||
     "https://agentrouter.org/v1";
 
-  const { effectivePrimary, effectiveSecondary, effectiveModel } =
+  const { effectivePrimary, effectiveSecondary } =
     await resolveTaskRouting(options.task, options.model);
-
-  const configuredModel = effectiveModel;
 
   const reasoningEffort =
     options.reasoningEffort ||
@@ -443,64 +516,95 @@ export async function executeAiCompletion(
         const activeKey = isGateway ? gatewayKey : agentRouterKey;
         const activeBaseUrl = isGateway ? gatewayBaseUrl : agentRouterBaseUrl;
 
-        const startTime = Date.now();
-        const endpoint = `${activeBaseUrl.replace(/\/+$/, "")}/chat/completions`;
+        const baseModel = await getProviderModel(prov, options.model);
+        const modelsQueue = [baseModel];
+        if (isGateway) {
+          for (const fb of ["glm-5.3-flash", "kimi-k3", "DeepSeek-V4-Pro", "auto"]) {
+            if (!modelsQueue.some((m) => m.toLowerCase() === fb.toLowerCase())) {
+              modelsQueue.push(fb);
+            }
+          }
+        } else {
+          for (const fb of ["deepseek-v4-flash", "gpt-5.6-sol", "auto"]) {
+            if (!modelsQueue.some((m) => m.toLowerCase() === fb.toLowerCase())) {
+              modelsQueue.push(fb);
+            }
+          }
+        }
 
         const messages = [
           ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
           { role: "user", content: prompt },
         ];
 
-        const isDeepSeek = configuredModel.toLowerCase().includes("deepseek");
-        const payload: Record<string, unknown> = {
-          model: configuredModel,
-          messages,
-          max_tokens: maxTokens,
-        };
+        let modelAttemptError: Error | null = null;
+        for (const modelToTry of modelsQueue) {
+          const startTime = Date.now();
+          const endpoint = `${activeBaseUrl.replace(/\/+$/, "")}/chat/completions`;
 
-        if (!isDeepSeek && reasoningEffort) {
-          payload.reasoning_effort = reasoningEffort;
-        } else {
-          payload.temperature = temperature;
-        }
-
-        const reqHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${activeKey}`,
-        };
-        if (!isGateway && activeBaseUrl.includes("agentrouter.org")) {
-          Object.assign(reqHeaders, AGENTROUTER_HEADERS);
-        }
-
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: reqHeaders,
-          body: JSON.stringify(payload),
-        });
-
-        const latencyMs = Date.now() - startTime;
-
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content || "";
-          return {
-            text,
-            latencyMs,
-            provider: prov,
-            modelUsed: configuredModel,
-            usage: {
-              promptTokens: data.usage?.prompt_tokens,
-              completionTokens: data.usage?.completion_tokens,
-              totalTokens: data.usage?.total_tokens,
-            },
+          const isDeepSeek = modelToTry.toLowerCase().includes("deepseek");
+          const payload: Record<string, unknown> = {
+            model: modelToTry,
+            messages,
+            max_tokens: maxTokens,
           };
-        } else {
-          const errText = await res.text();
-          throw new Error(`Gateway Error (${res.status}): ${errText}`);
+
+          if (!isDeepSeek && reasoningEffort) {
+            payload.reasoning_effort = reasoningEffort;
+          } else {
+            payload.temperature = temperature;
+          }
+
+          const reqHeaders: Record<string, string> = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${activeKey}`,
+          };
+          if (!isGateway && activeBaseUrl.includes("agentrouter.org")) {
+            Object.assign(reqHeaders, AGENTROUTER_HEADERS);
+          }
+
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: reqHeaders,
+            body: JSON.stringify(payload),
+          });
+
+          const latencyMs = Date.now() - startTime;
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content || "";
+            return {
+              text,
+              latencyMs,
+              provider: prov,
+              modelUsed: modelToTry,
+              usage: {
+                promptTokens: data.usage?.prompt_tokens,
+                completionTokens: data.usage?.completion_tokens,
+                totalTokens: data.usage?.total_tokens,
+              },
+            };
+          } else {
+            const errText = await res.text();
+            modelAttemptError = new Error(`Gateway Error (${res.status}): ${errText}`);
+            const isModelPermissionOrNotFoundError =
+              res.status === 403 ||
+              res.status === 404 ||
+              errText.includes("无权访问模型") ||
+              errText.includes("model_not_found") ||
+              errText.includes("does not exist");
+            if (isModelPermissionOrNotFoundError) {
+              console.warn(`Model ${modelToTry} on [${prov}] returned ${res.status}. Attempting candidate model fallback...`);
+              continue;
+            } else {
+              break;
+            }
+          }
         }
+        if (modelAttemptError) throw modelAttemptError;
       } else if (prov === "gemini") {
-        const geminiModel =
-          isAgentRouterModel(configuredModel) ? "gemini-3.8-flash" : configuredModel;
+        const geminiModel = await getProviderModel("gemini", options.model);
 
         const startTime = Date.now();
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;

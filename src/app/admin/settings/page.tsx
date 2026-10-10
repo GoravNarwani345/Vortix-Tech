@@ -503,10 +503,26 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleSelectGatewayModel = (selectedModel: string) => {
+  const handleSelectGatewayModel = async (selectedModel: string) => {
     setGatewayModel(selectedModel);
     setAiModel(selectedModel);
-    toast.success(`Active Gateway model set to ${selectedModel}. Click Save Settings to persist.`);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gatewayModel: selectedModel,
+          aiModel: selectedModel,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Active Gateway model set to ${selectedModel} and saved!`);
+      } else {
+        toast.success(`Active Gateway model set to ${selectedModel}. Click Save All Changes to persist.`);
+      }
+    } catch {
+      toast.success(`Active Gateway model set to ${selectedModel}. Click Save All Changes to persist.`);
+    }
   };
 
   const handleCheckAgentRouterModels = async () => {
@@ -535,10 +551,26 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleSelectAgentRouterModel = (selectedModel: string) => {
+  const handleSelectAgentRouterModel = async (selectedModel: string) => {
     setAgentRouterModel(selectedModel);
     setAiModel(selectedModel);
-    toast.success(`Active AgentRouter model set to ${selectedModel}. Click Save Settings to persist.`);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentRouterModel: selectedModel,
+          aiModel: selectedModel,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Active AgentRouter model set to ${selectedModel} and saved!`);
+      } else {
+        toast.success(`Active AgentRouter model set to ${selectedModel}. Click Save All Changes to persist.`);
+      }
+    } catch {
+      toast.success(`Active AgentRouter model set to ${selectedModel}. Click Save All Changes to persist.`);
+    }
   };
 
   const handleManualSync = async () => {
