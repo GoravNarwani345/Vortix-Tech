@@ -154,8 +154,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
             {/* Main Article Body */}
             <div className="flex-1 min-w-0 max-w-3xl">
-              {/* Cover Visual with self-healing fallback */}
-              <div className="w-full h-[300px] sm:h-[400px] md:h-[460px] rounded-2xl overflow-hidden mb-10 shadow-md relative border border-gray-100">
+              {/* Cover Visual with self-healing fallback and adaptive aspect-ratio display */}
+              <div className="w-full rounded-2xl overflow-hidden mb-10 shadow-md relative border border-slate-200/80 bg-slate-950">
                 <BlogCardImage
                   src={article.image}
                   alt={article.title}

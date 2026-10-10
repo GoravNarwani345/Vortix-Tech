@@ -22,14 +22,14 @@ export function extractHeadingsFromMarkdown(content: string): TOCItem[] {
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith("## ")) {
-      const text = trimmed.replace(/^##\s+/, "").trim();
+      const text = trimmed.replace(/^##\s+/, "").replace(/[*_`#]/g, "").trim();
       const id = text
         .toLowerCase()
         .replace(/[^\w\s-]/g, "")
         .replace(/\s+/g, "-");
       items.push({ id, text, level: 2 });
     } else if (trimmed.startsWith("### ")) {
-      const text = trimmed.replace(/^###\s+/, "").trim();
+      const text = trimmed.replace(/^###\s+/, "").replace(/[*_`#]/g, "").trim();
       const id = text
         .toLowerCase()
         .replace(/[^\w\s-]/g, "")
@@ -55,31 +55,42 @@ export function ArticleTOC({ headings: initialHeadings, content }: ArticleTOCPro
   useEffect(() => {
     if (headings.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find visible heading closest to the top of viewport
-        const visibleEntries = entries.filter((e) => e.isIntersecting);
-        if (visibleEntries.length > 0) {
-          // Sort by top distance
-          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-          setActiveId(visibleEntries[0].target.id);
-        }
-      },
-      {
-        rootMargin: "-80px 0px -60% 0px",
-        threshold: 0,
-      }
-    );
+    const handleScroll = () => {
+      const headingElements = headings
+        .map((h) => ({ id: h.id, el: document.getElementById(h.id) }))
+        .filter((item): item is { id: string; el: HTMLElement } => Boolean(item.el));
 
-    headings.forEach((h) => {
-      const el = document.getElementById(h.id);
-      if (el) observer.observe(el);
-    });
+      // Viewport-relative measurement: safe against nested parent offsets
+      for (let i = headingElements.length - 1; i >= 0; i--) {
+        const item = headingElements[i];
+        const rect = item.el.getBoundingClientRect();
+        if (rect.top <= 160) {
+          setActiveId(item.id);
+          return;
+        }
+      }
+
+      if (headingElements.length > 0) {
+        setActiveId(headingElements[0].id);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
 
     return () => {
-      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [headings]);
+
+  // Keep the active item visible in the TOC menu container when scrolling
+  useEffect(() => {
+    if (!activeId) return;
+    const activeEl = document.getElementById(`toc-item-${activeId}`);
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [activeId]);
 
   const scrollToHeading = (id: string) => {
     const el = document.getElementById(id);
@@ -94,11 +105,36 @@ export function ArticleTOC({ headings: initialHeadings, content }: ArticleTOCPro
 
   if (headings.length < 2) return null;
 
+  const currentHeading = headings.find((h) => h.id === activeId) || headings[0];
+  const activeIndex = headings.findIndex((h) => h.id === activeId);
+
   return (
     <>
-      {/* DESKTOP SIDEBAR TOC */}
-      <aside className="hidden lg:block w-72 shrink-0">
-        <div className="sticky top-28 max-h-[calc(100vh-140px)] overflow-y-auto p-5 rounded-2xl bg-white border border-gray-100 shadow-xs space-y-4">
+      {/* MOBILE/TABLET STICKY SUB-BAR: Stays fixed under the main navbar during page scroll */}
+      <div className="lg:hidden sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-2xs px-4 py-2.5 flex items-center justify-between transition-all">
+        <div className="flex items-center gap-2 min-w-0 flex-1 mr-3">
+          <List size={14} className="text-blue-600 shrink-0" />
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider shrink-0">
+            {activeIndex >= 0 ? `${activeIndex + 1}/${headings.length}` : "Section"}
+          </span>
+          <span className="text-xs font-semibold text-gray-900 truncate">
+            {currentHeading ? currentHeading.text : "Table of Contents"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen(true)}
+          className="shrink-0 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1"
+          aria-label="Open Table of Contents"
+        >
+          <span>Contents</span>
+          <ChevronRight size={12} />
+        </button>
+      </div>
+
+      {/* DESKTOP SIDEBAR TOC: Pinned & sticky to scroll seamlessly with the page */}
+      <aside className="hidden lg:block w-72 shrink-0 sticky top-24 self-start z-30">
+        <div className="max-h-[calc(100vh-120px)] overflow-y-auto p-5 rounded-2xl bg-white border border-gray-100 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-2">
               <List size={14} className="text-blue-600" />
@@ -110,21 +146,25 @@ export function ArticleTOC({ headings: initialHeadings, content }: ArticleTOCPro
           </div>
 
           <nav className="space-y-1 text-xs">
-            {headings.map((item) => {
+            {headings.map((item, idx) => {
               const isActive = activeId === item.id;
               return (
                 <button
                   key={item.id}
+                  id={`toc-item-${item.id}`}
                   type="button"
                   onClick={() => scrollToHeading(item.id)}
-                  className={`w-full text-left py-1.5 px-2.5 rounded-lg transition-all flex items-start gap-2 ${
+                  className={`w-full text-left py-2 px-2.5 rounded-lg transition-all flex items-start gap-2 ${
                     item.level === 3 ? "pl-5 text-gray-600" : "font-medium"
                   } ${
                     isActive
-                      ? "bg-blue-50 text-blue-700 font-bold shadow-2xs border-l-2 border-blue-600"
+                      ? "bg-blue-50 text-blue-700 font-bold shadow-2xs border-l-3 border-blue-600 pl-3"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
+                  <span className="text-[10px] font-mono text-gray-400 shrink-0 mt-0.5">
+                    {idx + 1}.
+                  </span>
                   <span className="truncate leading-snug">{item.text}</span>
                 </button>
               );
@@ -139,7 +179,7 @@ export function ArticleTOC({ headings: initialHeadings, content }: ArticleTOCPro
           type="button"
           onClick={() => setIsMobileOpen(true)}
           className="p-3.5 rounded-full bg-gray-900 text-white shadow-xl hover:bg-black transition-all flex items-center gap-2 text-xs font-bold border border-gray-800"
-          aria-label="Open Table of Contents"
+          aria-label="Open Table of Contents Drawer"
         >
           <List size={16} className="text-cyan-400" />
           <span className="pr-1">TOC</span>
@@ -165,7 +205,7 @@ export function ArticleTOC({ headings: initialHeadings, content }: ArticleTOCPro
             </div>
 
             <div className="overflow-y-auto space-y-1 py-1 max-h-[60vh]">
-              {headings.map((item) => {
+              {headings.map((item, idx) => {
                 const isActive = activeId === item.id;
                 return (
                   <button
@@ -176,11 +216,14 @@ export function ArticleTOC({ headings: initialHeadings, content }: ArticleTOCPro
                       item.level === 3 ? "pl-6 text-gray-500" : "font-medium"
                     } ${
                       isActive
-                        ? "bg-blue-50 text-blue-700 font-bold"
+                        ? "bg-blue-50 text-blue-700 font-bold border-l-2 border-blue-600 pl-4"
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <span className="truncate">{item.text}</span>
+                    <span className="truncate flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-gray-400">{idx + 1}.</span>
+                      {item.text}
+                    </span>
                     <ChevronRight size={14} className={isActive ? "text-blue-600" : "text-gray-300"} />
                   </button>
                 );

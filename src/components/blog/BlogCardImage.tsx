@@ -39,6 +39,31 @@ export function BlogCardImage({
   const isValidSrc = Boolean(src && typeof src === "string" && src.trim().length > 0 && !hasError);
 
   if (isValidSrc) {
+    if (variant === "detail") {
+      return (
+        <div
+          className={`relative w-full overflow-hidden bg-slate-950 flex items-center justify-center rounded-2xl min-h-[260px] sm:min-h-[340px] max-h-[560px] ${className}`}
+        >
+          {/* Ambient Blurred Backdrop to seamlessly fill aspect ratio differences */}
+          <img
+            src={src as string}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none select-none"
+          />
+          <div className="absolute inset-0 bg-slate-950/20 pointer-events-none" />
+
+          {/* 100% Uncropped Crisp Foreground Image (Any aspect ratio fits perfectly) */}
+          <img
+            src={src as string}
+            alt={alt}
+            onError={() => setHasError(true)}
+            className="relative z-10 w-auto h-auto max-w-full max-h-[540px] object-contain mx-auto rounded-xl drop-shadow-md"
+          />
+        </div>
+      );
+    }
+
     return (
       <div className={`relative w-full h-full overflow-hidden bg-gray-900 ${className}`}>
         <img

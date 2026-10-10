@@ -23,6 +23,19 @@ interface ArticleContentProps {
   content: string;
 }
 
+function extractNodeText(node: React.ReactNode): string {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractNodeText).join("");
+  if (React.isValidElement(node)) {
+    const props = node.props as { children?: React.ReactNode };
+    if (props && props.children) {
+      return extractNodeText(props.children);
+    }
+  }
+  return "";
+}
+
 function HeadingWithAnchor({
   level,
   children,
@@ -32,9 +45,7 @@ function HeadingWithAnchor({
   children: React.ReactNode;
   className?: string;
 }) {
-  const text = React.Children.toArray(children)
-    .map((c) => (typeof c === "string" ? c : ""))
-    .join("");
+  const text = extractNodeText(children).replace(/[*_`#]/g, "").trim();
   const id = text
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
@@ -448,12 +459,12 @@ export function ArticleContent({ content }: ArticleContentProps) {
         remarkPlugins={[remarkGfm]}
         components={{
           table: ({ ...props }) => (
-            <div className="my-8 overflow-x-auto rounded-xl border border-gray-200 shadow-xs bg-white">
+            <div className="my-8 overflow-x-auto max-h-[550px] overflow-y-auto rounded-xl border border-gray-200 shadow-xs bg-white">
               <table className="w-full text-left border-collapse text-sm text-gray-700" {...props} />
             </div>
           ),
           thead: ({ ...props }) => (
-            <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-900 uppercase tracking-wider" {...props} />
+            <thead className="bg-gray-50/95 backdrop-blur-xs sticky top-0 z-10 border-b border-gray-200 text-xs font-bold text-gray-900 uppercase tracking-wider" {...props} />
           ),
           tbody: ({ ...props }) => (
             <tbody className="divide-y divide-gray-100 bg-white" {...props} />
@@ -568,6 +579,22 @@ export function ArticleContent({ content }: ArticleContentProps) {
           ),
           hr: ({ ...props }) => (
             <hr className="my-10 border-gray-200" {...props} />
+          ),
+          img: ({ src, alt, ...props }) => (
+            <span className="block my-8 rounded-2xl overflow-hidden border border-gray-200/80 bg-slate-950/5 p-1 shadow-sm">
+              <img
+                src={src}
+                alt={alt || "Article graphic"}
+                className="w-auto h-auto max-w-full max-h-[540px] mx-auto rounded-xl object-contain block"
+                loading="lazy"
+                {...props}
+              />
+              {alt && (
+                <span className="block text-center text-xs text-gray-500 mt-2 font-mono">
+                  {alt}
+                </span>
+              )}
+            </span>
           ),
         }}
       >
