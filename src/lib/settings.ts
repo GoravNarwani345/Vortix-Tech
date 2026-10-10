@@ -58,8 +58,9 @@ export type AppSettings = {
 const DATA_DIR = path.join(process.cwd(), "data");
 const SETTINGS_FILE = path.join(DATA_DIR, "app_settings.json");
 
-// In-memory cache for fast access
+// In-memory cache for fast access with 2-second TTL to pick up disk updates immediately
 let settingsCache: AppSettings | null = null;
+let lastCacheReadTime = 0;
 
 async function ensureDataDir() {
   try {
@@ -69,16 +70,21 @@ async function ensureDataDir() {
   }
 }
 
-export async function getStoredSettings(): Promise<AppSettings> {
-  if (settingsCache) return { ...settingsCache };
+export async function getStoredSettings(forceFresh = false): Promise<AppSettings> {
+  const now = Date.now();
+  if (!forceFresh && settingsCache && now - lastCacheReadTime < 2000) {
+    return { ...settingsCache };
+  }
 
   try {
     await ensureDataDir();
     const raw = await fs.readFile(SETTINGS_FILE, "utf-8");
     settingsCache = JSON.parse(raw);
+    lastCacheReadTime = now;
     return { ...settingsCache };
   } catch {
     settingsCache = {};
+    lastCacheReadTime = now;
     return {};
   }
 }
@@ -123,6 +129,7 @@ export async function updateSettings(updates: Partial<AppSettings>): Promise<App
 
   const merged = { ...current, ...cleaned };
   settingsCache = merged;
+  lastCacheReadTime = Date.now();
 
   await fs.writeFile(SETTINGS_FILE, JSON.stringify(merged, null, 2), "utf-8");
   return { ...merged };

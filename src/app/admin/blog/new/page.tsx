@@ -3,11 +3,9 @@
 import { useState, useEffect } from "react";
 import {
   Loader2,
-  Wand2,
   ArrowLeft,
   Image as ImageIcon,
   Save,
-  Sparkles,
   Search,
   BookOpen,
   TrendingUp,
@@ -21,6 +19,12 @@ import {
   FileText,
   Palette,
   Sliders,
+  Lightbulb,
+  Compass,
+  RefreshCw,
+  Clock,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -32,7 +36,7 @@ import { BlogCoverImageUploader } from "@/components/admin/BlogCoverImageUploade
 export default function NewBlogPage() {
   const router = useRouter();
 
-  // Mode: "daily" (Daily SEO Opportunities) or "research" (Custom Prompt & Deep Research)
+  // Mode: "daily" (Daily Article Topics) or "research" (Custom Prompt & Deep Research)
   const [activeTab, setActiveTab] = useState<"daily" | "research">("daily");
 
   // Daily Quotas State
@@ -40,6 +44,13 @@ export default function NewBlogPage() {
     blog?: { used: number; limit: number; remaining: number };
     research?: { used: number; limit: number; remaining: number };
   } | null>(null);
+
+  // Daily Topics State (Persists 23 hours across reloads)
+  const [seoTopics, setSeoTopics] = useState<SEOTopicItem[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState("");
+  const [isGeneratingTopics, setIsGeneratingTopics] = useState(false);
+  const [topicsValidUntil, setTopicsValidUntil] = useState<number | null>(null);
+  const [isLoadingTopics, setIsLoadingTopics] = useState(true);
 
   useEffect(() => {
     fetch("/api/admin/ai/quota")
@@ -50,12 +61,46 @@ export default function NewBlogPage() {
         }
       })
       .catch(() => {});
-  }, []);
 
-  // Daily Topics State
-  const [seoTopics, setSeoTopics] = useState<SEOTopicItem[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [isGeneratingTopics, setIsGeneratingTopics] = useState(false);
+    // 1. Immediately hydrate daily article topics from localStorage for instant display on reload
+    try {
+      const local = localStorage.getItem("vortix_daily_article_topics");
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (parsed?.items && Array.isArray(parsed.items) && parsed.validUntil > Date.now()) {
+          setSeoTopics(parsed.items);
+          setTopicsValidUntil(parsed.validUntil);
+          setIsLoadingTopics(false);
+        }
+      }
+    } catch {
+      // Ignore local storage error
+    }
+
+    // 2. Fetch authoritative 23-hour server cache
+    fetch("/api/admin/ai/topics")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+          setSeoTopics(data.items);
+          if (data.validUntil) {
+            setTopicsValidUntil(data.validUntil);
+            try {
+              localStorage.setItem(
+                "vortix_daily_article_topics",
+                JSON.stringify({ items: data.items, validUntil: data.validUntil })
+              );
+            } catch {
+              // Ignore
+            }
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setIsLoadingTopics(false);
+      });
+  }, []);
 
   // Research State
   const [researchPrompt, setResearchPrompt] = useState("");
@@ -90,19 +135,34 @@ export default function NewBlogPage() {
   const [includeArchitectureFlow, setIncludeArchitectureFlow] = useState(true);
   const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
 
-  // 1. Fetch Daily SEO Topic Ideas
-  const generateTopics = async () => {
+  // 1. Fetch Daily Article Topic Ideas (23-hour cache aware)
+  const generateTopics = async (forceRefresh = false) => {
     setIsGeneratingTopics(true);
     try {
       const res = await fetch("/api/admin/ai/topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ forceRefresh }),
       });
       const data = await res.json();
       if (data.items && data.items.length > 0) {
         setSeoTopics(data.items);
-        toast.success(`Generated ${data.items.length} SEO opportunity topics!`);
+        if (data.validUntil) {
+          setTopicsValidUntil(data.validUntil);
+          try {
+            localStorage.setItem(
+              "vortix_daily_article_topics",
+              JSON.stringify({ items: data.items, validUntil: data.validUntil })
+            );
+          } catch {
+            // Ignore
+          }
+        }
+        toast.success(
+          forceRefresh
+            ? `Generated ${data.items.length} fresh article topics! Active for 23 hours.`
+            : `Daily article topics loaded!`
+        );
       } else if (data.topics) {
         // Fallback for basic format
         const formatted: SEOTopicItem[] = data.topics.map((t: string) => ({
@@ -114,7 +174,7 @@ export default function NewBlogPage() {
           briefReason: "High relevance to tech agency clients.",
         }));
         setSeoTopics(formatted);
-        toast.success("Topics generated!");
+        toast.success("Article topics loaded!");
       } else {
         throw new Error(data.error);
       }
@@ -415,7 +475,7 @@ export default function NewBlogPage() {
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <TrendingUp size={15} /> Daily SEO Topics
+              <BookOpen size={15} /> Daily Article Topics
             </button>
             <button
               type="button"
@@ -430,37 +490,50 @@ export default function NewBlogPage() {
             </button>
           </div>
 
-          {/* TAB 1: DAILY SEO TOPICS */}
+          {/* TAB 1: DAILY ARTICLE TOPICS */}
           {activeTab === "daily" && (
             <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <Sparkles size={18} />
+                    <Lightbulb size={18} />
                   </div>
                   <div>
-                    <h2 className="font-bold text-gray-900 text-sm">Daily SEO Opportunities</h2>
-                    <p className="text-[11px] text-gray-500">Trending topics based on search intent</p>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold text-gray-900 text-sm">Daily Article Topics</h2>
+                      {topicsValidUntil && topicsValidUntil > Date.now() && (
+                        <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Clock size={11} />
+                          {Math.max(1, Math.round((topicsValidUntil - Date.now()) / (1000 * 60 * 60)))}h left today
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500">Curated editorial topics. Saved for 23 hours.</p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={generateTopics}
+                  onClick={() => generateTopics(true)}
                   disabled={isGeneratingTopics}
                   className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {isGeneratingTopics ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
-                  Suggest Daily Topics
+                  {isGeneratingTopics ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                  Refresh Article Topics
                 </button>
               </div>
 
-              {seoTopics.length === 0 ? (
+              {isLoadingTopics ? (
+                <div className="text-center py-8 px-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50 flex flex-col items-center justify-center">
+                  <Loader2 size={22} className="animate-spin text-indigo-600 mb-2" />
+                  <p className="text-xs text-gray-600 font-medium">Loading daily article topics...</p>
+                </div>
+              ) : seoTopics.length === 0 ? (
                 <div className="text-center py-8 px-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                  <Sparkles size={24} className="mx-auto text-gray-300 mb-2" />
-                  <p className="text-xs text-gray-600 font-medium">No topics generated yet today</p>
+                  <Lightbulb size={24} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-xs text-gray-600 font-medium">No topics active right now</p>
                   <p className="text-[11px] text-gray-400 mt-1">
-                    Click &ldquo;Suggest Daily Topics&rdquo; to analyze current SEO ranking opportunities.
+                    Click &ldquo;Refresh Article Topics&rdquo; to generate today&apos;s editorial suggestions.
                   </p>
                 </div>
               ) : (
@@ -537,7 +610,7 @@ export default function NewBlogPage() {
                   disabled={isWriting}
                   className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition-colors font-bold text-xs shadow-xs disabled:opacity-50"
                 >
-                  {isWriting ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                  {isWriting ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
                   Write Full Article from Selected Topic
                 </button>
               )}

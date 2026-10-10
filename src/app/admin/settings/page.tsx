@@ -203,6 +203,8 @@ export default function AdminSettingsPage() {
   const [agentRouterBaseUrl, setAgentRouterBaseUrl] = useState("https://agentrouter.org/v1");
   const [agentRouterModel, setAgentRouterModel] = useState("deepseek-v4-flash");
   const [agentRouterReasoningEffort, setAgentRouterReasoningEffort] = useState("medium");
+  const [savingGatewayKey, setSavingGatewayKey] = useState(false);
+  const [savingAgentRouterKey, setSavingAgentRouterKey] = useState(false);
 
   const [aiProvider, setAiProvider] = useState<"gateway" | "gemini" | "agentrouter">("gateway");
   const [aiPrimaryProvider, setAiPrimaryProvider] = useState<"gateway" | "agentrouter" | "gemini">("gateway");
@@ -570,6 +572,63 @@ export default function AdminSettingsPage() {
       }
     } catch {
       toast.success(`Active AgentRouter model set to ${selectedModel}. Click Save All Changes to persist.`);
+    }
+  };
+
+  const handleSaveGatewayKey = async () => {
+    if (!gatewayApiKey.trim()) {
+      toast.error("Please enter a Gateway API key first.");
+      return;
+    }
+    setSavingGatewayKey(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gatewayApiKey: gatewayApiKey.trim(),
+          gatewayBaseUrl,
+          gatewayModel,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save Gateway key");
+      toast.success("Gateway API key successfully saved and active!");
+      setGatewayApiKey("");
+      await fetchSettings();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save Gateway key");
+    } finally {
+      setSavingGatewayKey(false);
+    }
+  };
+
+  const handleSaveAgentRouterKey = async () => {
+    if (!agentRouterApiKey.trim()) {
+      toast.error("Please enter an AgentRouter API key first.");
+      return;
+    }
+    setSavingAgentRouterKey(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentRouterApiKey: agentRouterApiKey.trim(),
+          agentRouterBaseUrl,
+          agentRouterModel,
+          agentRouterReasoningEffort,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save AgentRouter key");
+      toast.success("AgentRouter API key successfully saved and active!");
+      setAgentRouterApiKey("");
+      await fetchSettings();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save AgentRouter key");
+    } finally {
+      setSavingAgentRouterKey(false);
     }
   };
 
@@ -1592,20 +1651,31 @@ export default function AdminSettingsPage() {
                     <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                       Gateway API Key
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showGatewayKey ? "text" : "password"}
-                        value={gatewayApiKey}
-                        onChange={(e) => setGatewayApiKey(e.target.value)}
-                        placeholder={gatewayMasked || "sk-..."}
-                        className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={showGatewayKey ? "text" : "password"}
+                          value={gatewayApiKey}
+                          onChange={(e) => setGatewayApiKey(e.target.value)}
+                          placeholder={gatewayMasked || "sk-..."}
+                          className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowGatewayKey(!showGatewayKey)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                        >
+                          {showGatewayKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setShowGatewayKey(!showGatewayKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                        onClick={handleSaveGatewayKey}
+                        disabled={savingGatewayKey || !gatewayApiKey.trim()}
+                        className="px-3.5 py-2.5 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm shrink-0 disabled:opacity-50"
                       >
-                        {showGatewayKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {savingGatewayKey ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                        <span>Save Key</span>
                       </button>
                     </div>
                     <p className="text-xs text-foreground-muted flex items-center gap-1">
@@ -1822,20 +1892,31 @@ export default function AdminSettingsPage() {
                     <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
                       AgentRouter API Key
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showAgentRouterKey ? "text" : "password"}
-                        value={agentRouterApiKey}
-                        onChange={(e) => setAgentRouterApiKey(e.target.value)}
-                        placeholder={agentRouterMasked || "sk-..."}
-                        className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={showAgentRouterKey ? "text" : "password"}
+                          value={agentRouterApiKey}
+                          onChange={(e) => setAgentRouterApiKey(e.target.value)}
+                          placeholder={agentRouterMasked || "sk-..."}
+                          className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAgentRouterKey(!showAgentRouterKey)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                        >
+                          {showAgentRouterKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setShowAgentRouterKey(!showAgentRouterKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                        onClick={handleSaveAgentRouterKey}
+                        disabled={savingAgentRouterKey || !agentRouterApiKey.trim()}
+                        className="px-3.5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 shadow-sm shrink-0 disabled:opacity-50"
                       >
-                        {showAgentRouterKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {savingAgentRouterKey ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                        <span>Save Key</span>
                       </button>
                     </div>
                     <p className="text-xs text-foreground-muted flex items-center gap-1">
