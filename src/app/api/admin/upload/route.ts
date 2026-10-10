@@ -4,6 +4,9 @@ import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 // Max 100MB per video, 25MB per image
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 25 * 1024 * 1024;
@@ -77,12 +80,32 @@ export async function POST(req: Request) {
         );
       }
 
-      // Standardize extension: all raster images saved as .webp, vector as .svg, video as web format
+      // Preserve accurate extension matching MIME type
       let targetExt = path.extname(file.name).toLowerCase();
       if (isImage) {
-        targetExt = file.type === "image/svg+xml" || targetExt === ".svg" ? ".svg" : ".webp";
+        if (file.type === "image/svg+xml" || targetExt === ".svg") {
+          targetExt = ".svg";
+        } else if (file.type === "image/webp" || targetExt === ".webp") {
+          targetExt = ".webp";
+        } else if (file.type === "image/png" || targetExt === ".png") {
+          targetExt = ".png";
+        } else if (file.type === "image/gif" || targetExt === ".gif") {
+          targetExt = ".gif";
+        } else if (file.type === "image/jpeg" || targetExt === ".jpg" || targetExt === ".jpeg") {
+          targetExt = ".jpg";
+        } else {
+          targetExt = targetExt || ".webp";
+        }
       } else if (isVideo) {
-        targetExt = targetExt === ".webm" ? ".webm" : targetExt === ".ogg" ? ".ogg" : ".mp4";
+        if (file.type === "video/webm" || targetExt === ".webm") {
+          targetExt = ".webm";
+        } else if (file.type === "video/ogg" || targetExt === ".ogg") {
+          targetExt = ".ogg";
+        } else if (file.type === "video/quicktime" || targetExt === ".mov") {
+          targetExt = ".mov";
+        } else {
+          targetExt = targetExt || ".mp4";
+        }
       }
 
       const safeBaseName = path

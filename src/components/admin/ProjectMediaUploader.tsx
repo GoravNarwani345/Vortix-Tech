@@ -38,6 +38,7 @@ export default function ProjectMediaUploader({
   const [uploadProgressText, setUploadProgressText] = useState("");
   const [previewMediaUrl, setPreviewMediaUrl] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [failedMedia, setFailedMedia] = useState<Record<string, boolean>>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -129,29 +130,64 @@ export default function ProjectMediaUploader({
     }
 
     setUploading(true);
-    setUploadProgressText(`Uploading ${filesToUpload.length} file(s)...`);
+    const updatedMediaList = [...media];
+    let uploadSuccessCount = 0;
 
     try {
-      const formData = new FormData();
-      for (const f of filesToUpload) {
-        formData.append("files", f);
+      // Upload file-by-file sequentially to prevent 413 Payload Too Large and show live progress
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const fileItem = filesToUpload[i];
+        const isVid = isVideoMedia(fileItem.name) || fileItem.type.startsWith("video/");
+        setUploadProgressText(
+          `Uploading ${isVid ? "video" : "image"} ${i + 1} of ${filesToUpload.length} (${fileItem.name})...`
+        );
+
+        const formData = new FormData();
+        formData.append("file", fileItem);
+
+        try {
+          const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (res.status === 413) {
+            toast.error(
+              `"${fileItem.name}" exceeds maximum upload limit (413). Please compress the file before uploading.`
+            );
+            continue;
+          }
+
+          let data: any = null;
+          try {
+            data = await res.json();
+          } catch {
+            toast.error(`Server error uploading "${fileItem.name}".`);
+            continue;
+          }
+
+          if (res.ok && data?.success && Array.isArray(data.files) && data.files.length > 0) {
+            const uploadedUrl = data.files[0].url;
+            updatedMediaList.push(uploadedUrl);
+            uploadSuccessCount++;
+            onChange([...updatedMediaList]);
+          } else {
+            toast.error(data?.error || `Failed to upload "${fileItem.name}"`);
+          }
+        } catch (fileErr) {
+          toast.error(
+            fileErr instanceof Error
+              ? fileErr.message
+              : `Connection error while uploading "${fileItem.name}"`
+          );
+        }
       }
 
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success && Array.isArray(data.files)) {
-        const uploadedUrls = data.files.map((item: { url: string }) => item.url);
-        onChange([...media, ...uploadedUrls]);
-        toast.success(`Successfully uploaded ${uploadedUrls.length} file(s)!`);
-      } else {
-        toast.error(data.error || "Failed to upload files to server");
+      if (uploadSuccessCount > 0) {
+        toast.success(`Successfully uploaded ${uploadSuccessCount} file(s)!`);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      toast.error(err instanceof Error ? err.message : "Upload processing failed");
     } finally {
       setUploading(false);
       setUploadProgressText("");
@@ -378,25 +414,43 @@ export default function ProjectMediaUploader({
                   {/* Media Content Preview */}
                   {isVid ? (
                     <div className="w-full h-full relative flex items-center justify-center bg-black">
-                      <video
-                        src={item}
-                        muted
-                        playsInline
-                        preload="metadata"
-                        className="w-full h-full object-cover opacity-80"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm text-white flex items-center justify-center">
-                          <Play size={14} className="ml-0.5" fill="white" />
+                      {failedMedia[item] ? (
+                        <div className="flex flex-col items-center justify-center p-2 text-center text-gray-400">
+                          <Video size={24} className="mb-1 text-purple-400" />
+                          <span className="text-[10px]">Video preview unavailable</span>
                         </div>
-                      </div>
+                      ) : (
+                        <>
+                          <video
+                            src={item}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            onError={() => setFailedMedia((prev) => ({ ...prev, [item]: true }))}
+                            className="w-full h-full object-cover opacity-80"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm text-white flex items-center justify-center">
+                              <Play size={14} className="ml-0.5" fill="white" />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ) : (
-                    <img
-                      src={item}
-                      alt={`Project media ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                    failedMedia[item] ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-2 text-center">
+                        <ImageIcon size={24} className="mb-1 text-gray-400" />
+                        <span className="text-[10px] text-gray-500 font-medium">Image preview unavailable</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={item}
+                        alt={`Project media ${index + 1}`}
+                        onError={() => setFailedMedia((prev) => ({ ...prev, [item]: true }))}
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   )}
 
                   {/* Badges */}
