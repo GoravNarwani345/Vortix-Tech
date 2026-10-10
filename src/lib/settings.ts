@@ -9,17 +9,20 @@ export type AppSettings = {
   AGENTROUTER_BASE_URL?: string;
   AGENTROUTER_MODEL?: string;
   AGENTROUTER_REASONING_EFFORT?: string;
-  AI_PROVIDER?: "gemini" | "agentrouter" | "auto";
-  AI_PRIMARY_PROVIDER?: "agentrouter" | "gemini";
-  AI_SECONDARY_PROVIDER?: "gemini" | "agentrouter" | "none";
+  GATEWAY_API_KEY?: string;
+  GATEWAY_BASE_URL?: string;
+  GATEWAY_MODEL?: string;
+  AI_PROVIDER?: "gateway" | "agentrouter" | "gemini" | "auto";
+  AI_PRIMARY_PROVIDER?: "gateway" | "agentrouter" | "gemini";
+  AI_SECONDARY_PROVIDER?: "gemini" | "gateway" | "agentrouter" | "none";
   // Task-specific routing configuration
-  AI_TASK_CHAT_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_CHAT_PROVIDER?: "default" | "gateway" | "agentrouter" | "gemini";
   AI_TASK_CHAT_MODEL?: string;
-  AI_TASK_BLOG_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_BLOG_PROVIDER?: "default" | "gateway" | "agentrouter" | "gemini";
   AI_TASK_BLOG_MODEL?: string;
-  AI_TASK_RESEARCH_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_RESEARCH_PROVIDER?: "default" | "gateway" | "agentrouter" | "gemini";
   AI_TASK_RESEARCH_MODEL?: string;
-  AI_TASK_AUDIT_PROVIDER?: "default" | "agentrouter" | "gemini";
+  AI_TASK_AUDIT_PROVIDER?: "default" | "gateway" | "agentrouter" | "gemini";
   AI_TASK_AUDIT_MODEL?: string;
   IMAGE_API_KEY?: string;
   IMAGE_BASE_URL?: string;

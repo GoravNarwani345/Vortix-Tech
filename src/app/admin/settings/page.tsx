@@ -51,21 +51,25 @@ type SettingsData = {
   hasAdminPassword: boolean;
   geminiApiKeyMasked: string;
   hasGeminiApiKey: boolean;
+  gatewayApiKeyMasked?: string;
+  hasGatewayApiKey?: boolean;
+  gatewayBaseUrl?: string;
+  gatewayModel?: string;
   agentRouterApiKeyMasked?: string;
   hasAgentRouterApiKey?: boolean;
   agentRouterBaseUrl?: string;
   agentRouterModel?: string;
   agentRouterReasoningEffort?: string;
-  aiProvider?: "gemini" | "agentrouter" | "auto";
-  aiPrimaryProvider?: "agentrouter" | "gemini";
-  aiSecondaryProvider?: "gemini" | "agentrouter" | "none";
-  aiTaskChatProvider?: "default" | "agentrouter" | "gemini";
+  aiProvider?: "gateway" | "gemini" | "agentrouter" | "auto";
+  aiPrimaryProvider?: "gateway" | "agentrouter" | "gemini";
+  aiSecondaryProvider?: "gemini" | "gateway" | "agentrouter" | "none";
+  aiTaskChatProvider?: "default" | "gateway" | "agentrouter" | "gemini";
   aiTaskChatModel?: string;
-  aiTaskBlogProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskBlogProvider?: "default" | "gateway" | "agentrouter" | "gemini";
   aiTaskBlogModel?: string;
-  aiTaskResearchProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskResearchProvider?: "default" | "gateway" | "agentrouter" | "gemini";
   aiTaskResearchModel?: string;
-  aiTaskAuditProvider?: "default" | "agentrouter" | "gemini";
+  aiTaskAuditProvider?: "default" | "gateway" | "agentrouter" | "gemini";
   aiTaskAuditModel?: string;
   imageApiKeyMasked?: string;
   hasImageApiKey?: boolean;
@@ -185,25 +189,33 @@ export default function AdminSettingsPage() {
   const [cronSecret, setCronSecret] = useState("");
   const [cronSecretMasked, setCronSecretMasked] = useState("");
 
-  // AgentRouter & AI Gateway states (DeepSeek priority #1)
+  // OpenAI Gateway states (api.hcnsec.cn)
+  const [gatewayApiKey, setGatewayApiKey] = useState("");
+  const [showGatewayKey, setShowGatewayKey] = useState(false);
+  const [gatewayMasked, setGatewayMasked] = useState("");
+  const [gatewayBaseUrl, setGatewayBaseUrl] = useState("https://api.hcnsec.cn/v1");
+  const [gatewayModel, setGatewayModel] = useState("DeepSeek-V4-Flash");
+
+  // AgentRouter states (agentrouter.org)
   const [agentRouterApiKey, setAgentRouterApiKey] = useState("");
   const [showAgentRouterKey, setShowAgentRouterKey] = useState(false);
   const [agentRouterMasked, setAgentRouterMasked] = useState("");
-  const [agentRouterBaseUrl, setAgentRouterBaseUrl] = useState("https://api.hcnsec.cn/v1");
-  const [agentRouterModel, setAgentRouterModel] = useState("DeepSeek-V4-Flash");
+  const [agentRouterBaseUrl, setAgentRouterBaseUrl] = useState("https://agentrouter.org/v1");
+  const [agentRouterModel, setAgentRouterModel] = useState("deepseek-v4-flash");
   const [agentRouterReasoningEffort, setAgentRouterReasoningEffort] = useState("medium");
-  const [aiProvider, setAiProvider] = useState<"gemini" | "agentrouter">("agentrouter");
-  const [aiPrimaryProvider, setAiPrimaryProvider] = useState<"agentrouter" | "gemini">("agentrouter");
-  const [aiSecondaryProvider, setAiSecondaryProvider] = useState<"gemini" | "agentrouter" | "none">("gemini");
+
+  const [aiProvider, setAiProvider] = useState<"gateway" | "gemini" | "agentrouter">("gateway");
+  const [aiPrimaryProvider, setAiPrimaryProvider] = useState<"gateway" | "agentrouter" | "gemini">("gateway");
+  const [aiSecondaryProvider, setAiSecondaryProvider] = useState<"gemini" | "gateway" | "agentrouter" | "none">("gemini");
 
   // Per-Task Routing Specialization Matrix states
-  const [aiTaskChatProvider, setAiTaskChatProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskChatProvider, setAiTaskChatProvider] = useState<"default" | "gateway" | "agentrouter" | "gemini">("default");
   const [aiTaskChatModel, setAiTaskChatModel] = useState("");
-  const [aiTaskBlogProvider, setAiTaskBlogProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskBlogProvider, setAiTaskBlogProvider] = useState<"default" | "gateway" | "agentrouter" | "gemini">("default");
   const [aiTaskBlogModel, setAiTaskBlogModel] = useState("");
-  const [aiTaskResearchProvider, setAiTaskResearchProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskResearchProvider, setAiTaskResearchProvider] = useState<"default" | "gateway" | "agentrouter" | "gemini">("default");
   const [aiTaskResearchModel, setAiTaskResearchModel] = useState("");
-  const [aiTaskAuditProvider, setAiTaskAuditProvider] = useState<"default" | "agentrouter" | "gemini">("default");
+  const [aiTaskAuditProvider, setAiTaskAuditProvider] = useState<"default" | "gateway" | "agentrouter" | "gemini">("default");
   const [aiTaskAuditModel, setAiTaskAuditModel] = useState("");
 
   // Image Generation states (StepFun step-image-edit-2)
@@ -219,9 +231,20 @@ export default function AdminSettingsPage() {
   const [testImageUrl, setTestImageUrl] = useState<string | null>(null);
   const [testImageLatency, setTestImageLatency] = useState<number | null>(null);
 
-  // Model diagnostics state (DeepSeek tested first)
-  const [checkingModels, setCheckingModels] = useState(false);
-  const [modelCheckResults, setModelCheckResults] = useState<Array<{
+  // Model diagnostics state (Gateway & AgentRouter tested separately)
+  const [checkingGatewayModels, setCheckingGatewayModels] = useState(false);
+  const [gatewayCheckResults, setGatewayCheckResults] = useState<Array<{
+    model: string;
+    online: boolean;
+    latencyMs: number;
+    reply?: string;
+    error?: string;
+    costTier: string;
+    recommended?: boolean;
+  }> | null>(null);
+
+  const [checkingAgentRouterModels, setCheckingAgentRouterModels] = useState(false);
+  const [agentRouterCheckResults, setAgentRouterCheckResults] = useState<Array<{
     model: string;
     online: boolean;
     latencyMs: number;
@@ -277,11 +300,14 @@ export default function AdminSettingsPage() {
         const s: SettingsData = data.settings;
         setAdminEmail(s.adminEmail || "");
         setGeminiMasked(s.geminiApiKeyMasked || "");
+        setGatewayMasked(s.gatewayApiKeyMasked || "");
+        setGatewayBaseUrl(s.gatewayBaseUrl || "https://api.hcnsec.cn/v1");
+        setGatewayModel(s.gatewayModel || "DeepSeek-V4-Flash");
         setAgentRouterMasked(s.agentRouterApiKeyMasked || "");
-        setAgentRouterBaseUrl(s.agentRouterBaseUrl || "https://api.hcnsec.cn/v1");
-        setAgentRouterModel(s.agentRouterModel || "DeepSeek-V4-Flash");
+        setAgentRouterBaseUrl(s.agentRouterBaseUrl || "https://agentrouter.org/v1");
+        setAgentRouterModel(s.agentRouterModel || "deepseek-v4-flash");
         setAgentRouterReasoningEffort(s.agentRouterReasoningEffort || "medium");
-        setAiProvider((s.aiProvider as "gemini" | "agentrouter") || "agentrouter");
+        setAiProvider((s.aiProvider as "gemini" | "agentrouter" | "gateway") || "gateway");
         if (s.aiPrimaryProvider) setAiPrimaryProvider(s.aiPrimaryProvider);
         if (s.aiSecondaryProvider) setAiSecondaryProvider(s.aiSecondaryProvider);
         if (s.aiTaskChatProvider) setAiTaskChatProvider(s.aiTaskChatProvider);
@@ -377,6 +403,8 @@ export default function AdminSettingsPage() {
         aiMaxTokens,
         aiCustomInstructions,
         contactEmail,
+        gatewayBaseUrl,
+        gatewayModel,
         agentRouterBaseUrl,
         agentRouterModel,
         agentRouterReasoningEffort,
@@ -415,6 +443,7 @@ export default function AdminSettingsPage() {
 
       if (newPassword) payload.adminPassword = newPassword;
       if (geminiApiKey) payload.geminiApiKey = geminiApiKey;
+      if (gatewayApiKey) payload.gatewayApiKey = gatewayApiKey;
       if (agentRouterApiKey) payload.agentRouterApiKey = agentRouterApiKey;
       if (imageApiKey) payload.imageApiKey = imageApiKey;
       if (resendApiKey) payload.resendApiKey = resendApiKey;
@@ -433,6 +462,7 @@ export default function AdminSettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
       setGeminiApiKey("");
+      setGatewayApiKey("");
       setAgentRouterApiKey("");
       setImageApiKey("");
       setResendApiKey("");
@@ -447,35 +477,68 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleCheckModels = async () => {
-    setCheckingModels(true);
-    setModelCheckResults(null);
+  const handleCheckGatewayModels = async () => {
+    setCheckingGatewayModels(true);
+    setGatewayCheckResults(null);
     try {
       const res = await fetch("/api/admin/ai/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "check-models",
+          provider: "gateway",
+          apiKey: gatewayApiKey || undefined,
+          baseUrl: gatewayBaseUrl || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to test Gateway models");
+      setGatewayCheckResults(data.models);
+      toast.success("OpenAI Gateway connectivity test complete!");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error checking Gateway models";
+      toast.error(msg);
+    } finally {
+      setCheckingGatewayModels(false);
+    }
+  };
+
+  const handleSelectGatewayModel = (selectedModel: string) => {
+    setGatewayModel(selectedModel);
+    setAiModel(selectedModel);
+    toast.success(`Active Gateway model set to ${selectedModel}. Click Save Settings to persist.`);
+  };
+
+  const handleCheckAgentRouterModels = async () => {
+    setCheckingAgentRouterModels(true);
+    setAgentRouterCheckResults(null);
+    try {
+      const res = await fetch("/api/admin/ai/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "check-models",
+          provider: "agentrouter",
           apiKey: agentRouterApiKey || undefined,
           baseUrl: agentRouterBaseUrl || undefined,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to test models");
-      setModelCheckResults(data.models);
-      toast.success("Model connectivity test complete! DeepSeek checked first.");
+      if (!res.ok) throw new Error(data.error || "Failed to test AgentRouter models");
+      setAgentRouterCheckResults(data.models);
+      toast.success("AgentRouter connectivity test complete!");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error checking models";
+      const msg = err instanceof Error ? err.message : "Error checking AgentRouter models";
       toast.error(msg);
     } finally {
-      setCheckingModels(false);
+      setCheckingAgentRouterModels(false);
     }
   };
 
-  const handleSelectGatewayModel = (selectedModel: string) => {
+  const handleSelectAgentRouterModel = (selectedModel: string) => {
     setAgentRouterModel(selectedModel);
     setAiModel(selectedModel);
-    toast.success(`Active model set to ${selectedModel}. Click Save Settings to persist.`);
+    toast.success(`Active AgentRouter model set to ${selectedModel}. Click Save Settings to persist.`);
   };
 
   const handleManualSync = async () => {
@@ -920,7 +983,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-accent/15 text-accent border border-accent/30">
-                      Active: {aiPrimaryProvider === "agentrouter" ? "Gateway First" : "Gemini First"}
+                      Active: {aiPrimaryProvider === "gateway" ? "OpenAI Gateway First" : aiPrimaryProvider === "agentrouter" ? "AgentRouter First" : "Gemini First"}
                     </span>
                   </div>
                 </div>
@@ -933,15 +996,15 @@ export default function AdminSettingsPage() {
                         <CheckCircle2 size={14} /> Primary Provider (Runs First)
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <button
                         type="button"
                         onClick={() => {
-                          setAiPrimaryProvider("agentrouter");
-                          if (aiSecondaryProvider === "agentrouter") setAiSecondaryProvider("gemini");
+                          setAiPrimaryProvider("gateway");
+                          if (aiSecondaryProvider === "gateway") setAiSecondaryProvider("gemini");
                         }}
                         className={`p-3 rounded-xl border text-left transition-all ${
-                          aiPrimaryProvider === "agentrouter"
+                          aiPrimaryProvider === "gateway"
                             ? "border-accent bg-accent/10 shadow-xs"
                             : "border-card-border bg-card-bg hover:border-card-border/80"
                         }`}
@@ -950,8 +1013,29 @@ export default function AdminSettingsPage() {
                           <Zap size={14} className="text-accent" />
                           OpenAI Gateway
                         </div>
-                        <p className="text-[11px] text-foreground-muted mt-1">
-                          Hcnsec / DeepSeek / AgentRouter
+                        <p className="text-[10px] text-foreground-muted mt-1 leading-tight">
+                          api.hcnsec.cn / DeepSeek-V4
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAiPrimaryProvider("agentrouter");
+                          if (aiSecondaryProvider === "agentrouter") setAiSecondaryProvider("gateway");
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiPrimaryProvider === "agentrouter"
+                            ? "border-accent bg-accent/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                          <Cpu size={14} className="text-purple-400" />
+                          AgentRouter
+                        </div>
+                        <p className="text-[10px] text-foreground-muted mt-1 leading-tight">
+                          agentrouter.org / Claude & GPT
                         </p>
                       </button>
 
@@ -959,7 +1043,7 @@ export default function AdminSettingsPage() {
                         type="button"
                         onClick={() => {
                           setAiPrimaryProvider("gemini");
-                          if (aiSecondaryProvider === "gemini") setAiSecondaryProvider("agentrouter");
+                          if (aiSecondaryProvider === "gemini") setAiSecondaryProvider("gateway");
                         }}
                         className={`p-3 rounded-xl border text-left transition-all ${
                           aiPrimaryProvider === "gemini"
@@ -968,10 +1052,10 @@ export default function AdminSettingsPage() {
                         }`}
                       >
                         <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
-                          <Bot size={14} className="text-accent" />
+                          <Bot size={14} className="text-cyan-400" />
                           Google Gemini
                         </div>
-                        <p className="text-[11px] text-foreground-muted mt-1">
+                        <p className="text-[10px] text-foreground-muted mt-1 leading-tight">
                           Gemini 3.8 / 3.6 Flash
                         </p>
                       </button>
@@ -985,7 +1069,7 @@ export default function AdminSettingsPage() {
                         <ShieldAlert size={14} /> Secondary Provider (Automated Fallback)
                       </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <button
                         type="button"
                         onClick={() => setAiSecondaryProvider("gemini")}
@@ -998,8 +1082,25 @@ export default function AdminSettingsPage() {
                         <div className="font-bold text-xs text-foreground">
                           Gemini
                         </div>
-                        <p className="text-[10px] text-foreground-muted mt-0.5">
+                        <p className="text-[10px] text-foreground-muted mt-0.5 leading-tight">
                           Failover to Google
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAiSecondaryProvider("gateway")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          aiSecondaryProvider === "gateway"
+                            ? "border-emerald-500 bg-emerald-500/10 shadow-xs"
+                            : "border-card-border bg-card-bg hover:border-card-border/80"
+                        }`}
+                      >
+                        <div className="font-bold text-xs text-foreground">
+                          Gateway
+                        </div>
+                        <p className="text-[10px] text-foreground-muted mt-0.5 leading-tight">
+                          Failover to Gateway
                         </p>
                       </button>
 
@@ -1013,10 +1114,10 @@ export default function AdminSettingsPage() {
                         }`}
                       >
                         <div className="font-bold text-xs text-foreground">
-                          Gateway
+                          AgentRouter
                         </div>
-                        <p className="text-[10px] text-foreground-muted mt-0.5">
-                          Failover to Gateway
+                        <p className="text-[10px] text-foreground-muted mt-0.5 leading-tight">
+                          Failover to Router
                         </p>
                       </button>
 
@@ -1032,7 +1133,7 @@ export default function AdminSettingsPage() {
                         <div className="font-bold text-xs text-foreground">
                           None
                         </div>
-                        <p className="text-[10px] text-foreground-muted mt-0.5">
+                        <p className="text-[10px] text-foreground-muted mt-0.5 leading-tight">
                           Disable Fallback
                         </p>
                       </button>
@@ -1092,11 +1193,12 @@ export default function AdminSettingsPage() {
                         </label>
                         <select
                           value={aiTaskChatProvider}
-                          onChange={(e) => setAiTaskChatProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          onChange={(e) => setAiTaskChatProvider(e.target.value as "default" | "gateway" | "agentrouter" | "gemini")}
                           className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
                         >
-                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
-                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "gateway" ? "OpenAI Gateway" : aiPrimaryProvider === "agentrouter" ? "AgentRouter" : "Gemini"})</option>
+                          <option value="gateway">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="agentrouter">AgentRouter (agentrouter.org)</option>
                           <option value="gemini">Google Gemini</option>
                         </select>
                       </div>
@@ -1179,11 +1281,12 @@ export default function AdminSettingsPage() {
                         </label>
                         <select
                           value={aiTaskBlogProvider}
-                          onChange={(e) => setAiTaskBlogProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          onChange={(e) => setAiTaskBlogProvider(e.target.value as "default" | "gateway" | "agentrouter" | "gemini")}
                           className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
                         >
-                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
-                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "gateway" ? "OpenAI Gateway" : aiPrimaryProvider === "agentrouter" ? "AgentRouter" : "Gemini"})</option>
+                          <option value="gateway">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="agentrouter">AgentRouter (agentrouter.org)</option>
                           <option value="gemini">Google Gemini</option>
                         </select>
                       </div>
@@ -1266,11 +1369,12 @@ export default function AdminSettingsPage() {
                         </label>
                         <select
                           value={aiTaskResearchProvider}
-                          onChange={(e) => setAiTaskResearchProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          onChange={(e) => setAiTaskResearchProvider(e.target.value as "default" | "gateway" | "agentrouter" | "gemini")}
                           className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
                         >
-                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
-                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "gateway" ? "OpenAI Gateway" : aiPrimaryProvider === "agentrouter" ? "AgentRouter" : "Gemini"})</option>
+                          <option value="gateway">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="agentrouter">AgentRouter (agentrouter.org)</option>
                           <option value="gemini">Google Gemini</option>
                         </select>
                       </div>
@@ -1353,11 +1457,12 @@ export default function AdminSettingsPage() {
                         </label>
                         <select
                           value={aiTaskAuditProvider}
-                          onChange={(e) => setAiTaskAuditProvider(e.target.value as "default" | "agentrouter" | "gemini")}
+                          onChange={(e) => setAiTaskAuditProvider(e.target.value as "default" | "gateway" | "agentrouter" | "gemini")}
                           className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:border-accent text-foreground shadow-2xs"
                         >
-                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "agentrouter" ? "Gateway" : "Gemini"})</option>
-                          <option value="agentrouter">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="default">Default: Inherit Platform Failover ({aiPrimaryProvider === "gateway" ? "OpenAI Gateway" : aiPrimaryProvider === "agentrouter" ? "AgentRouter" : "Gemini"})</option>
+                          <option value="gateway">OpenAI Gateway (api.hcnsec.cn)</option>
+                          <option value="agentrouter">AgentRouter (agentrouter.org)</option>
                           <option value="gemini">Google Gemini</option>
                         </select>
                       </div>
@@ -1409,7 +1514,7 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
-              {/* OpenAI-Compatible AI Gateway Card */}
+              {/* Card 1: OpenAI-Compatible AI Gateway Card */}
               <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
@@ -1419,7 +1524,7 @@ export default function AdminSettingsPage() {
                         OpenAI-Compatible AI Gateway
                       </h2>
                       <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Active Gateway
+                        {gatewayMasked ? "Active Gateway" : "Ready to Configure"}
                       </span>
                     </div>
                     <p className="text-foreground-muted text-xs mt-1">
@@ -1430,11 +1535,11 @@ export default function AdminSettingsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={handleCheckModels}
-                      disabled={checkingModels}
+                      onClick={handleCheckGatewayModels}
+                      disabled={checkingGatewayModels}
                       className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm shrink-0"
                     >
-                      {checkingModels ? (
+                      {checkingGatewayModels ? (
                         <>
                           <Loader2 size={14} className="animate-spin" />
                           <span>Verifying Gateway Models...</span>
@@ -1442,7 +1547,7 @@ export default function AdminSettingsPage() {
                       ) : (
                         <>
                           <Activity size={14} />
-                          <span>Verify Connectivity</span>
+                          <span>Verify Gateway Connectivity</span>
                         </>
                       )}
                     </button>
@@ -1457,24 +1562,24 @@ export default function AdminSettingsPage() {
                     </label>
                     <div className="relative">
                       <input
-                        type={showAgentRouterKey ? "text" : "password"}
-                        value={agentRouterApiKey}
-                        onChange={(e) => setAgentRouterApiKey(e.target.value)}
-                        placeholder={agentRouterMasked || "sk-..."}
+                        type={showGatewayKey ? "text" : "password"}
+                        value={gatewayApiKey}
+                        onChange={(e) => setGatewayApiKey(e.target.value)}
+                        placeholder={gatewayMasked || "sk-..."}
                         className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowAgentRouterKey(!showAgentRouterKey)}
+                        onClick={() => setShowGatewayKey(!showGatewayKey)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
                       >
-                        {showAgentRouterKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {showGatewayKey ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                     <p className="text-xs text-foreground-muted flex items-center gap-1">
-                      {agentRouterMasked ? (
+                      {gatewayMasked ? (
                         <span className="text-emerald-500 font-medium flex items-center gap-1">
-                          <CheckCircle2 size={13} /> Active: {agentRouterMasked}
+                          <CheckCircle2 size={13} /> Active: {gatewayMasked}
                         </span>
                       ) : (
                         <span className="text-amber-500 flex items-center gap-1">
@@ -1491,8 +1596,8 @@ export default function AdminSettingsPage() {
                     </label>
                     <input
                       type="text"
-                      value={agentRouterBaseUrl}
-                      onChange={(e) => setAgentRouterBaseUrl(e.target.value)}
+                      value={gatewayBaseUrl}
+                      onChange={(e) => setGatewayBaseUrl(e.target.value)}
                       placeholder="https://api.hcnsec.cn/v1"
                       className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
                     />
@@ -1505,9 +1610,9 @@ export default function AdminSettingsPage() {
                       Active Gateway Model
                     </label>
                     <select
-                      value={agentRouterModel}
+                      value={gatewayModel}
                       onChange={(e) => {
-                        setAgentRouterModel(e.target.value);
+                        setGatewayModel(e.target.value);
                         setAiModel(e.target.value);
                       }}
                       className="w-full px-3 py-2 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent font-medium"
@@ -1530,35 +1635,20 @@ export default function AdminSettingsPage() {
                       <option value="kimi-k3">
                         Kimi-k3 (Moonshot Long Context)
                       </option>
-                      <option value="step-5-preview">
-                        Step-5-Preview (StepFun Frontier)
-                      </option>
-                      <option value="auto">
-                        Auto (TrustedRouter Dynamic Dispatch)
-                      </option>
-                      <option value="gpt-5.6-sol">
-                        GPT-5.6 Sol (AgentRouter)
-                      </option>
-                      <option value="gpt-6-astra">
-                        GPT-6 Astra (AgentRouter)
-                      </option>
-                      <option value="claude-opus-4-8">
-                        Claude Opus 4.8 (AgentRouter)
-                      </option>
                     </select>
                     <p className="text-[11px] text-emerald-400 font-medium">
-                      {agentRouterModel.includes("deepseek") ? "Burns lowest API credits (~300ms)" : "Custom selection"}
+                      {gatewayModel.includes("DeepSeek") ? "Burns lowest API credits (~300ms)" : "Custom selection"}
                     </p>
                   </div>
                 </div>
 
-                {/* Model Check Results Diagnostic Feed */}
-                {modelCheckResults && (
+                {/* Gateway Model Check Results Diagnostic Feed */}
+                {gatewayCheckResults && (
                   <div className="pt-4 border-t border-card-border space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                         <Gauge size={16} className="text-accent" />
-                        Live Model Connectivity & Credit Audit (DeepSeek Checked First):
+                        Live Gateway Connectivity & Credit Audit:
                       </h3>
                       <span className="text-xs text-foreground-muted">
                         Click &ldquo;Use This Model&rdquo; to switch instantly
@@ -1566,8 +1656,8 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-                      {modelCheckResults.map((item) => {
-                        const isCurrent = agentRouterModel === item.model;
+                      {gatewayCheckResults.map((item) => {
+                        const isCurrent = gatewayModel === item.model;
                         const isDeepSeek = item.model.toLowerCase().includes("deepseek");
                         return (
                           <div
@@ -1634,6 +1724,227 @@ export default function AdminSettingsPage() {
                                   ? "bg-accent text-white shadow-sm"
                                   : item.online
                                   ? "bg-card-bg border border-card-border hover:border-accent text-foreground"
+                                  : "bg-card-bg/40 text-foreground-muted cursor-not-allowed border border-card-border/40"
+                              )}
+                            >
+                              {isCurrent ? (
+                                <>
+                                  <Check size={12} />
+                                  <span>Active Model</span>
+                                </>
+                              ) : (
+                                <span>Use This Model</span>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 2: AgentRouter Integration Card */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-card-border shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Cpu size={20} className="text-purple-400" />
+                      <h2 className="text-lg font-bold text-foreground">
+                        AgentRouter Multi-Model Routing Engine
+                      </h2>
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        {agentRouterMasked ? "Active Router" : "Ready to Configure"}
+                      </span>
+                    </div>
+                    <p className="text-foreground-muted text-xs mt-1">
+                      Direct upstream connection to <span className="font-mono text-purple-400">https://agentrouter.org/v1</span>. Multi-provider routing with Anthropic protocol headers, Claude Opus, and GPT models.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCheckAgentRouterModels}
+                      disabled={checkingAgentRouterModels}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm shrink-0"
+                    >
+                      {checkingAgentRouterModels ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Verifying AgentRouter...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Activity size={14} />
+                          <span>Verify Router Connectivity</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                  {/* AgentRouter API Key */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      AgentRouter API Key
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showAgentRouterKey ? "text" : "password"}
+                        value={agentRouterApiKey}
+                        onChange={(e) => setAgentRouterApiKey(e.target.value)}
+                        placeholder={agentRouterMasked || "sk-..."}
+                        className="w-full pl-4 pr-10 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAgentRouterKey(!showAgentRouterKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
+                      >
+                        {showAgentRouterKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-foreground-muted flex items-center gap-1">
+                      {agentRouterMasked ? (
+                        <span className="text-emerald-500 font-medium flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Active: {agentRouterMasked}
+                        </span>
+                      ) : (
+                        <span className="text-amber-500 flex items-center gap-1">
+                          <AlertTriangle size={13} /> Enter key or set in environment.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* AgentRouter Base URL */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      AgentRouter Base URL
+                    </label>
+                    <input
+                      type="text"
+                      value={agentRouterBaseUrl}
+                      onChange={(e) => setAgentRouterBaseUrl(e.target.value)}
+                      placeholder="https://agentrouter.org/v1"
+                      className="w-full px-3.5 py-2.5 bg-background border border-card-border rounded-xl text-sm font-mono focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-[11px] text-foreground-muted">OpenAI-compatible /v1 endpoint</p>
+                  </div>
+
+                  {/* Active AgentRouter Model */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                      Active Router Model
+                    </label>
+                    <select
+                      value={agentRouterModel}
+                      onChange={(e) => {
+                        setAgentRouterModel(e.target.value);
+                        setAiModel(e.target.value);
+                      }}
+                      className="w-full px-3 py-2 bg-background border border-card-border rounded-xl text-sm focus:outline-none focus:border-accent font-medium"
+                    >
+                      <option value="deepseek-v4-flash">
+                        deepseek-v4-flash (Lowest Cost)
+                      </option>
+                      <option value="gpt-5.6-sol">
+                        GPT-5.6 Sol (AgentRouter)
+                      </option>
+                      <option value="gpt-6-astra">
+                        GPT-6 Astra (AgentRouter)
+                      </option>
+                      <option value="claude-opus-4-8">
+                        Claude Opus 4.8 (AgentRouter)
+                      </option>
+                      <option value="claude-opus-5">
+                        Claude Opus 5 (AgentRouter)
+                      </option>
+                      <option value="auto">
+                        Auto (Dynamic Router Dispatch)
+                      </option>
+                    </select>
+                    <p className="text-[11px] text-purple-400 font-medium">
+                      Reasoning Effort: {agentRouterReasoningEffort}
+                    </p>
+                  </div>
+                </div>
+
+                {/* AgentRouter Model Check Results Diagnostic Feed */}
+                {agentRouterCheckResults && (
+                  <div className="pt-4 border-t border-card-border space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <Gauge size={16} className="text-purple-400" />
+                        Live AgentRouter Model Connectivity:
+                      </h3>
+                      <span className="text-xs text-foreground-muted">
+                        Click &ldquo;Use This Model&rdquo; to switch instantly
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                      {agentRouterCheckResults.map((item) => {
+                        const isCurrent = agentRouterModel === item.model;
+                        return (
+                          <div
+                            key={item.model}
+                            className={cn(
+                              "p-3.5 rounded-xl border flex flex-col justify-between transition-all bg-background/60 border-card-border hover:border-purple-500/30"
+                            )}
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                                  Router Model
+                                </span>
+
+                                <span className="flex items-center gap-1 text-[11px] font-medium">
+                                  {item.online ? (
+                                    <>
+                                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                      <span className="text-emerald-400 font-semibold">{item.latencyMs}ms</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="w-2 h-2 rounded-full bg-red-400" />
+                                      <span className="text-red-400 font-semibold">Offline</span>
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="font-mono text-xs font-bold text-foreground truncate">
+                                {item.model}
+                              </div>
+
+                              <div className="text-[11px] text-foreground-muted">
+                                {item.costTier}
+                              </div>
+
+                              {item.online ? (
+                                <p className="text-[10px] text-emerald-400 font-mono truncate">
+                                  Reply: &ldquo;{item.reply}&rdquo;
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-red-400 truncate" title={item.error}>
+                                  {item.error || "Connection error"}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSelectAgentRouterModel(item.model)}
+                              disabled={!item.online}
+                              className={cn(
+                                "mt-3 w-full py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                isCurrent
+                                  ? "bg-purple-600 text-white shadow-sm"
+                                  : item.online
+                                  ? "bg-card-bg border border-card-border hover:border-purple-500 text-foreground"
                                   : "bg-card-bg/40 text-foreground-muted cursor-not-allowed border border-card-border/40"
                               )}
                             >

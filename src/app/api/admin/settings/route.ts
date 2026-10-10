@@ -24,6 +24,19 @@ export async function GET() {
       stored.CONTACT_EMAIL || process.env.CONTACT_EMAIL || "info@thevortixtech.com";
     const rawGeminiKey =
       stored.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+    const rawGatewayKey =
+      stored.GATEWAY_API_KEY ||
+      process.env.GATEWAY_API_KEY ||
+      process.env.NEW_API_KEY ||
+      "";
+    const effectiveGatewayBaseUrl =
+      stored.GATEWAY_BASE_URL ||
+      process.env.GATEWAY_BASE_URL ||
+      "https://api.hcnsec.cn/v1";
+    const effectiveGatewayModel =
+      stored.GATEWAY_MODEL ||
+      process.env.GATEWAY_MODEL ||
+      "DeepSeek-V4-Flash";
     const rawAgentRouterKey =
       stored.AGENTROUTER_API_KEY || process.env.AGENTROUTER_API_KEY || "";
     const effectiveAgentRouterBaseUrl =
@@ -53,14 +66,18 @@ export async function GET() {
       ),
       geminiApiKeyMasked: maskSecret(rawGeminiKey),
       hasGeminiApiKey: Boolean(rawGeminiKey),
+      gatewayApiKeyMasked: maskSecret(rawGatewayKey),
+      hasGatewayApiKey: Boolean(rawGatewayKey),
+      gatewayBaseUrl: effectiveGatewayBaseUrl,
+      gatewayModel: effectiveGatewayModel,
       agentRouterApiKeyMasked: maskSecret(rawAgentRouterKey),
       hasAgentRouterApiKey: Boolean(rawAgentRouterKey),
       agentRouterBaseUrl: effectiveAgentRouterBaseUrl,
       agentRouterModel: effectiveAgentRouterModel,
       agentRouterReasoningEffort: stored.AGENTROUTER_REASONING_EFFORT || process.env.AGENTROUTER_REASONING_EFFORT || "medium",
-      aiProvider: stored.AI_PROVIDER || "agentrouter",
-      aiPrimaryProvider: stored.AI_PRIMARY_PROVIDER || "agentrouter",
-      aiSecondaryProvider: stored.AI_SECONDARY_PROVIDER || (rawGeminiKey ? "gemini" : "none"),
+      aiProvider: stored.AI_PROVIDER || "gateway",
+      aiPrimaryProvider: stored.AI_PRIMARY_PROVIDER || "gateway",
+      aiSecondaryProvider: stored.AI_SECONDARY_PROVIDER || (rawGeminiKey ? "gemini" : "agentrouter"),
       // Per-Task Specialization Routing Matrix
       aiTaskChatProvider: stored.AI_TASK_CHAT_PROVIDER || "default",
       aiTaskChatModel: stored.AI_TASK_CHAT_MODEL || "",
@@ -142,7 +159,19 @@ export async function POST(req: Request) {
       updates.GEMINI_API_KEY = body.geminiApiKey.trim();
     }
 
-    if (typeof body.agentRouterApiKey === "string" && body.agentRouterApiKey.trim()) {
+    if (typeof body.gatewayApiKey === "string" && body.gatewayApiKey.trim() && !body.gatewayApiKey.includes("•")) {
+      updates.GATEWAY_API_KEY = body.gatewayApiKey.trim();
+    }
+
+    if (typeof body.gatewayBaseUrl === "string" && body.gatewayBaseUrl.trim()) {
+      updates.GATEWAY_BASE_URL = body.gatewayBaseUrl.trim();
+    }
+
+    if (typeof body.gatewayModel === "string" && body.gatewayModel.trim()) {
+      updates.GATEWAY_MODEL = body.gatewayModel.trim();
+    }
+
+    if (typeof body.agentRouterApiKey === "string" && body.agentRouterApiKey.trim() && !body.agentRouterApiKey.includes("•")) {
       updates.AGENTROUTER_API_KEY = body.agentRouterApiKey.trim();
     }
 
@@ -175,39 +204,39 @@ export async function POST(req: Request) {
     }
 
     if (typeof body.aiProvider === "string") {
-      updates.AI_PROVIDER = body.aiProvider as "gemini" | "agentrouter";
+      updates.AI_PROVIDER = body.aiProvider as "gemini" | "agentrouter" | "gateway";
     }
 
     if (typeof body.aiPrimaryProvider === "string") {
-      updates.AI_PRIMARY_PROVIDER = body.aiPrimaryProvider as "agentrouter" | "gemini";
+      updates.AI_PRIMARY_PROVIDER = body.aiPrimaryProvider as "agentrouter" | "gateway" | "gemini";
       updates.AI_PROVIDER = updates.AI_PRIMARY_PROVIDER;
     }
 
     if (typeof body.aiSecondaryProvider === "string") {
-      updates.AI_SECONDARY_PROVIDER = body.aiSecondaryProvider as "gemini" | "agentrouter" | "none";
+      updates.AI_SECONDARY_PROVIDER = body.aiSecondaryProvider as "gemini" | "agentrouter" | "gateway" | "none";
     }
 
     // Task-specific routing updates
     if (typeof body.aiTaskChatProvider === "string") {
-      updates.AI_TASK_CHAT_PROVIDER = body.aiTaskChatProvider as "default" | "agentrouter" | "gemini";
+      updates.AI_TASK_CHAT_PROVIDER = body.aiTaskChatProvider as "default" | "gateway" | "agentrouter" | "gemini";
     }
     if (typeof body.aiTaskChatModel === "string") {
       updates.AI_TASK_CHAT_MODEL = body.aiTaskChatModel.trim();
     }
     if (typeof body.aiTaskBlogProvider === "string") {
-      updates.AI_TASK_BLOG_PROVIDER = body.aiTaskBlogProvider as "default" | "agentrouter" | "gemini";
+      updates.AI_TASK_BLOG_PROVIDER = body.aiTaskBlogProvider as "default" | "gateway" | "agentrouter" | "gemini";
     }
     if (typeof body.aiTaskBlogModel === "string") {
       updates.AI_TASK_BLOG_MODEL = body.aiTaskBlogModel.trim();
     }
     if (typeof body.aiTaskResearchProvider === "string") {
-      updates.AI_TASK_RESEARCH_PROVIDER = body.aiTaskResearchProvider as "default" | "agentrouter" | "gemini";
+      updates.AI_TASK_RESEARCH_PROVIDER = body.aiTaskResearchProvider as "default" | "gateway" | "agentrouter" | "gemini";
     }
     if (typeof body.aiTaskResearchModel === "string") {
       updates.AI_TASK_RESEARCH_MODEL = body.aiTaskResearchModel.trim();
     }
     if (typeof body.aiTaskAuditProvider === "string") {
-      updates.AI_TASK_AUDIT_PROVIDER = body.aiTaskAuditProvider as "default" | "agentrouter" | "gemini";
+      updates.AI_TASK_AUDIT_PROVIDER = body.aiTaskAuditProvider as "default" | "gateway" | "agentrouter" | "gemini";
     }
     if (typeof body.aiTaskAuditModel === "string") {
       updates.AI_TASK_AUDIT_MODEL = body.aiTaskAuditModel.trim();

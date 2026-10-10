@@ -16,18 +16,26 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // ACTION 1: Check connectivity and latency across available AgentRouter models
+    // ACTION 1: Check connectivity and latency across available models for Gateway or AgentRouter
     if (body.action === "check-models") {
+      const isGateway = body.provider === "gateway" || body.baseUrl?.includes("hcnsec");
       const apiKey =
         body.apiKey ||
-        (await getSetting("AGENTROUTER_API_KEY")) ||
-        process.env.AGENTROUTER_API_KEY;
+        (isGateway
+          ? (await getSetting("GATEWAY_API_KEY")) ||
+            process.env.GATEWAY_API_KEY ||
+            (await getSetting("IMAGE_API_KEY")) ||
+            process.env.IMAGE_API_KEY ||
+            process.env.NEW_API_KEY
+          : (await getSetting("AGENTROUTER_API_KEY")) ||
+            process.env.AGENTROUTER_API_KEY);
 
       if (!apiKey) {
         return NextResponse.json(
           {
-            error:
-              "Please enter or configure your AgentRouter API key to test models.",
+            error: isGateway
+              ? "Please enter or configure your OpenAI Gateway API key to test models."
+              : "Please enter or configure your AgentRouter API key to test models.",
           },
           { status: 400 }
         );
@@ -35,13 +43,19 @@ export async function POST(req: Request) {
 
       const baseUrl =
         body.baseUrl ||
-        (await getSetting("AGENTROUTER_BASE_URL")) ||
-        process.env.AGENTROUTER_BASE_URL ||
-        "https://agentrouter.org/v1";
+        (isGateway
+          ? (await getSetting("GATEWAY_BASE_URL")) ||
+            process.env.GATEWAY_BASE_URL ||
+            "https://api.hcnsec.cn/v1"
+          : (await getSetting("AGENTROUTER_BASE_URL")) ||
+            process.env.AGENTROUTER_BASE_URL ||
+            "https://agentrouter.org/v1");
 
       const modelsToTest =
         Array.isArray(body.models) && body.models.length > 0
           ? body.models
+          : isGateway
+          ? ["DeepSeek-V4-Flash", "DeepSeek-V4.1-Flash", "DeepSeek-V4-Pro", "glm-5.3-flash", "kimi-k3"]
           : AGENTROUTER_DEFAULT_MODELS;
 
       const results = await checkAvailableModels(apiKey, baseUrl, modelsToTest);

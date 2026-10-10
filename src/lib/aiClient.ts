@@ -47,7 +47,7 @@ export interface AiCompletionOptions {
 export interface AiCompletionResult {
   text: string;
   latencyMs: number;
-  provider: "agentrouter" | "gemini";
+  provider: "gateway" | "agentrouter" | "gemini";
   modelUsed: string;
   usage?: {
     promptTokens?: number;
@@ -103,11 +103,11 @@ export async function resolveTaskRouting(
   task?: AiTaskType,
   overrideModel?: string
 ): Promise<{
-  effectivePrimary: "agentrouter" | "gemini";
-  effectiveSecondary: "agentrouter" | "gemini" | "none";
+  effectivePrimary: "gateway" | "agentrouter" | "gemini";
+  effectiveSecondary: "gateway" | "agentrouter" | "gemini" | "none";
   effectiveModel: string;
 }> {
-  let taskProvider: "default" | "agentrouter" | "gemini" | undefined;
+  let taskProvider: "default" | "gateway" | "agentrouter" | "gemini" | undefined;
   let taskModel: string | undefined;
 
   if (task === "chat") {
@@ -124,27 +124,29 @@ export async function resolveTaskRouting(
     taskModel = await getSetting("AI_TASK_AUDIT_MODEL");
   }
 
-  // Global default primary is agentrouter
+  // Global default primary is gateway (https://api.hcnsec.cn/v1) or agentrouter
   const globalPrimary =
     (await getSetting("AI_PRIMARY_PROVIDER")) ||
     (await getSetting("AI_PROVIDER")) ||
-    "agentrouter";
+    "gateway";
 
-  const effectivePrimary: "agentrouter" | "gemini" =
+  const effectivePrimary: "gateway" | "agentrouter" | "gemini" =
     taskProvider && taskProvider !== "default"
-      ? (taskProvider as "agentrouter" | "gemini")
-      : (globalPrimary as "agentrouter" | "gemini");
+      ? (taskProvider as "gateway" | "agentrouter" | "gemini")
+      : (globalPrimary as "gateway" | "agentrouter" | "gemini");
 
   const globalSecondary =
     (await getSetting("AI_SECONDARY_PROVIDER")) ||
-    (effectivePrimary === "agentrouter" ? "gemini" : "agentrouter");
+    (effectivePrimary === "gemini" ? "gateway" : "gemini");
 
-  const effectiveSecondary: "agentrouter" | "gemini" | "none" =
-    globalSecondary as "agentrouter" | "gemini" | "none";
+  const effectiveSecondary: "gateway" | "agentrouter" | "gemini" | "none" =
+    globalSecondary as "gateway" | "agentrouter" | "gemini" | "none";
 
   const effectiveModel =
     overrideModel ||
     (taskModel && taskModel.trim() !== "" ? taskModel.trim() : null) ||
+    (await getSetting("GATEWAY_MODEL")) ||
+    process.env.GATEWAY_MODEL ||
     (await getSetting("AGENTROUTER_MODEL")) ||
     process.env.AGENTROUTER_MODEL ||
     (await getSetting("AI_MODEL")) ||
@@ -170,19 +172,28 @@ export async function executeAiChat(
     maxTokens = 800,
   } = options;
 
-  const agentRouterKey =
-    (await getSetting("AGENTROUTER_API_KEY")) ||
-    process.env.AGENTROUTER_API_KEY ||
+  const gatewayKey =
+    (await getSetting("GATEWAY_API_KEY")) ||
+    process.env.GATEWAY_API_KEY ||
     (await getSetting("IMAGE_API_KEY")) ||
     process.env.IMAGE_API_KEY ||
     process.env.NEW_API_KEY;
 
-  const agentRouterBaseUrl =
-    (await getSetting("AGENTROUTER_BASE_URL")) ||
-    process.env.AGENTROUTER_BASE_URL ||
+  const gatewayBaseUrl =
+    (await getSetting("GATEWAY_BASE_URL")) ||
+    process.env.GATEWAY_BASE_URL ||
     (await getSetting("IMAGE_BASE_URL")) ||
     process.env.IMAGE_BASE_URL ||
     "https://api.hcnsec.cn/v1";
+
+  const agentRouterKey =
+    (await getSetting("AGENTROUTER_API_KEY")) ||
+    process.env.AGENTROUTER_API_KEY;
+
+  const agentRouterBaseUrl =
+    (await getSetting("AGENTROUTER_BASE_URL")) ||
+    process.env.AGENTROUTER_BASE_URL ||
+    "https://agentrouter.org/v1";
 
   const { effectivePrimary, effectiveSecondary, effectiveModel } =
     await resolveTaskRouting(options.task || "chat", options.model);
@@ -198,24 +209,28 @@ export async function executeAiChat(
   const geminiKey =
     (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
 
-  const providersToTry: Array<"agentrouter" | "gemini"> = [];
-  if (effectivePrimary === "agentrouter" && agentRouterKey) providersToTry.push("agentrouter");
-  else if (effectivePrimary === "gemini" && geminiKey) providersToTry.push("gemini");
+  const providersToTry: Array<"gateway" | "agentrouter" | "gemini"> = [];
 
-  if (effectiveSecondary === "agentrouter" && agentRouterKey && !providersToTry.includes("agentrouter")) {
-    providersToTry.push("agentrouter");
-  } else if (effectiveSecondary === "gemini" && geminiKey && !providersToTry.includes("gemini")) {
-    providersToTry.push("gemini");
+  const addProviderIfAvailable = (p: "gateway" | "agentrouter" | "gemini") => {
+    if (p === "gateway" && gatewayKey && !providersToTry.includes("gateway")) providersToTry.push("gateway");
+    else if (p === "agentrouter" && agentRouterKey && !providersToTry.includes("agentrouter")) providersToTry.push("agentrouter");
+    else if (p === "gemini" && geminiKey && !providersToTry.includes("gemini")) providersToTry.push("gemini");
+  };
+
+  addProviderIfAvailable(effectivePrimary);
+  if (effectiveSecondary !== "none") {
+    addProviderIfAvailable(effectiveSecondary);
   }
 
   if (providersToTry.length === 0) {
+    if (gatewayKey) providersToTry.push("gateway");
     if (agentRouterKey) providersToTry.push("agentrouter");
     if (geminiKey) providersToTry.push("gemini");
   }
 
   if (providersToTry.length === 0) {
     throw new Error(
-      "No active AI provider reachable. Please configure Gateway API key or Gemini API key."
+      "No active AI provider reachable. Please configure OpenAI Gateway, AgentRouter, or Gemini in settings."
     );
   }
 
@@ -223,9 +238,13 @@ export async function executeAiChat(
 
   for (const prov of providersToTry) {
     try {
-      if (prov === "agentrouter") {
+      if (prov === "gateway" || prov === "agentrouter") {
+        const isGateway = prov === "gateway";
+        const activeKey = isGateway ? gatewayKey : agentRouterKey;
+        const activeBaseUrl = isGateway ? gatewayBaseUrl : agentRouterBaseUrl;
+
         const startTime = Date.now();
-        const endpoint = `${agentRouterBaseUrl.replace(/\/+$/, "")}/chat/completions`;
+        const endpoint = `${activeBaseUrl.replace(/\/+$/, "")}/chat/completions`;
 
         const openAiMessages = [
           ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
@@ -250,9 +269,9 @@ export async function executeAiChat(
 
         const reqHeaders: Record<string, string> = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${agentRouterKey}`,
+          Authorization: `Bearer ${activeKey}`,
         };
-        if (agentRouterBaseUrl.includes("agentrouter.org")) {
+        if (!isGateway && activeBaseUrl.includes("agentrouter.org")) {
           Object.assign(reqHeaders, AGENTROUTER_HEADERS);
         }
 
@@ -268,7 +287,7 @@ export async function executeAiChat(
           return {
             text,
             latencyMs: Date.now() - startTime,
-            provider: "agentrouter",
+            provider: prov,
             modelUsed: configuredModel,
             usage: {
               promptTokens: data.usage?.prompt_tokens,
@@ -349,21 +368,32 @@ export async function executeAiCompletion(
     maxTokens = 1000,
   } = options;
 
-  const agentRouterKey =
+  const gatewayKey =
     options.customApiKey ||
-    (await getSetting("AGENTROUTER_API_KEY")) ||
-    process.env.AGENTROUTER_API_KEY ||
+    (await getSetting("GATEWAY_API_KEY")) ||
+    process.env.GATEWAY_API_KEY ||
     (await getSetting("IMAGE_API_KEY")) ||
     process.env.IMAGE_API_KEY ||
     process.env.NEW_API_KEY;
+
+  const gatewayBaseUrl =
+    options.customBaseUrl ||
+    (await getSetting("GATEWAY_BASE_URL")) ||
+    process.env.GATEWAY_BASE_URL ||
+    (await getSetting("IMAGE_BASE_URL")) ||
+    process.env.IMAGE_BASE_URL ||
+    "https://api.hcnsec.cn/v1";
+
+  const agentRouterKey =
+    options.customApiKey ||
+    (await getSetting("AGENTROUTER_API_KEY")) ||
+    process.env.AGENTROUTER_API_KEY;
 
   const agentRouterBaseUrl =
     options.customBaseUrl ||
     (await getSetting("AGENTROUTER_BASE_URL")) ||
     process.env.AGENTROUTER_BASE_URL ||
-    (await getSetting("IMAGE_BASE_URL")) ||
-    process.env.IMAGE_BASE_URL ||
-    "https://api.hcnsec.cn/v1";
+    "https://agentrouter.org/v1";
 
   const { effectivePrimary, effectiveSecondary, effectiveModel } =
     await resolveTaskRouting(options.task, options.model);
@@ -379,24 +409,28 @@ export async function executeAiCompletion(
   const geminiKey =
     (await getSetting("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY;
 
-  const providersToTry: Array<"agentrouter" | "gemini"> = [];
-  if (effectivePrimary === "agentrouter" && agentRouterKey) providersToTry.push("agentrouter");
-  else if (effectivePrimary === "gemini" && geminiKey) providersToTry.push("gemini");
+  const providersToTry: Array<"gateway" | "agentrouter" | "gemini"> = [];
 
-  if (effectiveSecondary === "agentrouter" && agentRouterKey && !providersToTry.includes("agentrouter")) {
-    providersToTry.push("agentrouter");
-  } else if (effectiveSecondary === "gemini" && geminiKey && !providersToTry.includes("gemini")) {
-    providersToTry.push("gemini");
+  const addProviderIfAvailable = (p: "gateway" | "agentrouter" | "gemini") => {
+    if (p === "gateway" && gatewayKey && !providersToTry.includes("gateway")) providersToTry.push("gateway");
+    else if (p === "agentrouter" && agentRouterKey && !providersToTry.includes("agentrouter")) providersToTry.push("agentrouter");
+    else if (p === "gemini" && geminiKey && !providersToTry.includes("gemini")) providersToTry.push("gemini");
+  };
+
+  addProviderIfAvailable(effectivePrimary);
+  if (effectiveSecondary !== "none") {
+    addProviderIfAvailable(effectiveSecondary);
   }
 
   if (providersToTry.length === 0) {
+    if (gatewayKey) providersToTry.push("gateway");
     if (agentRouterKey) providersToTry.push("agentrouter");
     if (geminiKey) providersToTry.push("gemini");
   }
 
   if (providersToTry.length === 0) {
     throw new Error(
-      "No active AI provider configured. Please provide an OpenAI Gateway or Gemini API key in settings."
+      "No active AI provider configured. Please provide an OpenAI Gateway, AgentRouter, or Gemini API key in settings."
     );
   }
 
@@ -404,9 +438,13 @@ export async function executeAiCompletion(
 
   for (const prov of providersToTry) {
     try {
-      if (prov === "agentrouter") {
+      if (prov === "gateway" || prov === "agentrouter") {
+        const isGateway = prov === "gateway";
+        const activeKey = isGateway ? gatewayKey : agentRouterKey;
+        const activeBaseUrl = isGateway ? gatewayBaseUrl : agentRouterBaseUrl;
+
         const startTime = Date.now();
-        const endpoint = `${agentRouterBaseUrl.replace(/\/+$/, "")}/chat/completions`;
+        const endpoint = `${activeBaseUrl.replace(/\/+$/, "")}/chat/completions`;
 
         const messages = [
           ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
@@ -428,9 +466,9 @@ export async function executeAiCompletion(
 
         const reqHeaders: Record<string, string> = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${agentRouterKey}`,
+          Authorization: `Bearer ${activeKey}`,
         };
-        if (agentRouterBaseUrl.includes("agentrouter.org")) {
+        if (!isGateway && activeBaseUrl.includes("agentrouter.org")) {
           Object.assign(reqHeaders, AGENTROUTER_HEADERS);
         }
 
@@ -448,7 +486,7 @@ export async function executeAiCompletion(
           return {
             text,
             latencyMs,
-            provider: "agentrouter",
+            provider: prov,
             modelUsed: configuredModel,
             usage: {
               promptTokens: data.usage?.prompt_tokens,
