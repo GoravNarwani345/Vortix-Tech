@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { isVideoMedia } from "@/lib/mediaHelper";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
@@ -18,8 +19,129 @@ export async function POST(req: Request) {
 
   try {
     const formData = await req.formData();
-    
-    // Support either multiple files under "files" or single file under "file"
+    const uploadDir = path.resolve(process.cwd(), "public", "uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    // 1. Chunked Streaming Upload Handler (Bypasses all 413 reverse proxy / server limits)
+    const uploadId = formData.get("uploadId") as string | null;
+    const chunkIndexStr = formData.get("chunkIndex") as string | null;
+    const totalChunksStr = formData.get("totalChunks") as string | null;
+    const chunkFile = formData.get("file");
+    const originalFileName =
+      (formData.get("fileName") as string | null) ||
+      (chunkFile instanceof File ? chunkFile.name : "upload");
+
+    if (
+      uploadId &&
+      chunkIndexStr !== null &&
+      totalChunksStr !== null &&
+      chunkFile instanceof File
+    ) {
+      // Validate session ID to prevent directory traversal
+      if (!/^[a-zA-Z0-9_-]{10,80}$/.test(uploadId)) {
+        return NextResponse.json(
+          { error: "Invalid upload session identifier" },
+          { status: 400 }
+        );
+      }
+
+      const chunkIndex = parseInt(chunkIndexStr, 10);
+      const totalChunks = parseInt(totalChunksStr, 10);
+
+      if (
+        isNaN(chunkIndex) ||
+        isNaN(totalChunks) ||
+        chunkIndex < 0 ||
+        chunkIndex >= totalChunks
+      ) {
+        return NextResponse.json(
+          { error: "Invalid chunk sequencing parameters" },
+          { status: 400 }
+        );
+      }
+
+      const chunksDir = path.join(uploadDir, ".chunks");
+      await fs.mkdir(chunksDir, { recursive: true });
+
+      const partFilePath = path.join(chunksDir, `${uploadId}.part`);
+      const chunkBytes = await chunkFile.arrayBuffer();
+
+      if (chunkIndex === 0) {
+        await fs.writeFile(partFilePath, Buffer.from(chunkBytes));
+      } else {
+        await fs.appendFile(partFilePath, Buffer.from(chunkBytes));
+      }
+
+      // On final chunk, validate bounds and atomically promote to permanent uploads
+      if (chunkIndex === totalChunks - 1) {
+        const isVid =
+          isVideoMedia(originalFileName) || chunkFile.type.startsWith("video/");
+        const isImg = !isVid;
+
+        const stat = await fs.stat(partFilePath);
+        if (isVid && stat.size > MAX_VIDEO_SIZE) {
+          await fs.unlink(partFilePath).catch(() => {});
+          return NextResponse.json(
+            { error: `Video "${originalFileName}" exceeds the 100MB limit.` },
+            { status: 400 }
+          );
+        }
+        if (isImg && stat.size > MAX_IMAGE_SIZE) {
+          await fs.unlink(partFilePath).catch(() => {});
+          return NextResponse.json(
+            { error: `Image "${originalFileName}" exceeds the 25MB limit.` },
+            { status: 400 }
+          );
+        }
+
+        let targetExt = path.extname(originalFileName).toLowerCase();
+        if (isVid) {
+          if (targetExt === ".webm") targetExt = ".webm";
+          else if (targetExt === ".mov") targetExt = ".mov";
+          else if (targetExt === ".ogg") targetExt = ".ogg";
+          else targetExt = targetExt || ".mp4";
+        } else {
+          if (targetExt === ".webp") targetExt = ".webp";
+          else if (targetExt === ".svg") targetExt = ".svg";
+          else if (targetExt === ".png") targetExt = ".png";
+          else if (targetExt === ".gif") targetExt = ".gif";
+          else targetExt = targetExt || ".jpg";
+        }
+
+        const safeBaseName = path
+          .basename(originalFileName, path.extname(originalFileName))
+          .replace(/[^a-zA-Z0-9-_]/g, "_")
+          .slice(0, 40);
+
+        const secureId = crypto.randomUUID();
+        const fileName = `${Date.now()}-${secureId}-${safeBaseName}${targetExt}`;
+        const finalFilePath = path.join(uploadDir, fileName);
+
+        await fs.rename(partFilePath, finalFilePath);
+
+        return NextResponse.json({
+          success: true,
+          completed: true,
+          files: [
+            {
+              url: `/uploads/${fileName}`,
+              name: originalFileName,
+              type: chunkFile.type,
+              size: stat.size,
+            },
+          ],
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        completed: false,
+        chunkIndex,
+        totalChunks,
+      });
+    }
+
+    // 2. Standard Single-Request Upload Handler (for small assets <= 1MB)
     const files: File[] = [];
     const filesFromList = formData.getAll("files");
     const singleFile = formData.get("file");
@@ -38,9 +160,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
 
     const uploadedResults: Array<{
       url: string;
@@ -131,6 +250,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
+      completed: true,
       files: uploadedResults,
     });
   } catch (error) {

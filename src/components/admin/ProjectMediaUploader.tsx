@@ -134,52 +134,130 @@ export default function ProjectMediaUploader({
     let uploadSuccessCount = 0;
 
     try {
-      // Upload file-by-file sequentially to prevent 413 Payload Too Large and show live progress
+      // Upload file-by-file sequentially. For large files (> 768KB, like videos), use chunked streaming to prevent 413
       for (let i = 0; i < filesToUpload.length; i++) {
         const fileItem = filesToUpload[i];
         const isVid = isVideoMedia(fileItem.name) || fileItem.type.startsWith("video/");
-        setUploadProgressText(
-          `Uploading ${isVid ? "video" : "image"} ${i + 1} of ${filesToUpload.length} (${fileItem.name})...`
-        );
+        const CHUNK_SIZE = 768 * 1024; // 768 KB chunks safely bypass 1MB server body limits
 
-        const formData = new FormData();
-        formData.append("file", fileItem);
+        if (fileItem.size > CHUNK_SIZE) {
+          // --- CHUNKED STREAMING UPLOAD ---
+          const totalChunks = Math.ceil(fileItem.size / CHUNK_SIZE);
+          const uploadId = crypto.randomUUID();
+          let chunkSuccess = true;
+          let finalUploadedUrl: string | null = null;
 
-        try {
-          const res = await fetch("/api/admin/upload", {
-            method: "POST",
-            body: formData,
-          });
+          for (let c = 0; c < totalChunks; c++) {
+            const start = c * CHUNK_SIZE;
+            const end = Math.min(fileItem.size, start + CHUNK_SIZE);
+            const chunkBlob = fileItem.slice(start, end);
+            const chunkFile = new File([chunkBlob], fileItem.name, { type: fileItem.type });
 
-          if (res.status === 413) {
-            toast.error(
-              `"${fileItem.name}" exceeds maximum upload limit (413). Please compress the file before uploading.`
+            const percent = Math.round(((c + 1) / totalChunks) * 100);
+            setUploadProgressText(
+              `Uploading ${isVid ? "video" : "image"} (${percent}% • chunk ${c + 1}/${totalChunks})...`
             );
-            continue;
+
+            const formData = new FormData();
+            formData.append("file", chunkFile);
+            formData.append("fileName", fileItem.name);
+            formData.append("uploadId", uploadId);
+            formData.append("chunkIndex", c.toString());
+            formData.append("totalChunks", totalChunks.toString());
+
+            try {
+              const res = await fetch("/api/admin/upload", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (res.status === 413) {
+                toast.error(
+                  `Chunk ${c + 1} for "${fileItem.name}" exceeded proxy upload limit (413).`
+                );
+                chunkSuccess = false;
+                break;
+              }
+
+              let data: any = null;
+              try {
+                data = await res.json();
+              } catch {
+                toast.error(`Server error on chunk ${c + 1} for "${fileItem.name}".`);
+                chunkSuccess = false;
+                break;
+              }
+
+              if (res.ok && data?.success) {
+                if (data.completed && Array.isArray(data.files) && data.files.length > 0) {
+                  finalUploadedUrl = data.files[0].url;
+                }
+              } else {
+                toast.error(data?.error || `Upload failed at chunk ${c + 1}`);
+                chunkSuccess = false;
+                break;
+              }
+            } catch (err) {
+              toast.error(
+                err instanceof Error
+                  ? err.message
+                  : `Network interrupted while uploading chunk ${c + 1}`
+              );
+              chunkSuccess = false;
+              break;
+            }
           }
 
-          let data: any = null;
-          try {
-            data = await res.json();
-          } catch {
-            toast.error(`Server error uploading "${fileItem.name}".`);
-            continue;
-          }
-
-          if (res.ok && data?.success && Array.isArray(data.files) && data.files.length > 0) {
-            const uploadedUrl = data.files[0].url;
-            updatedMediaList.push(uploadedUrl);
+          if (chunkSuccess && finalUploadedUrl) {
+            updatedMediaList.push(finalUploadedUrl);
             uploadSuccessCount++;
             onChange([...updatedMediaList]);
-          } else {
-            toast.error(data?.error || `Failed to upload "${fileItem.name}"`);
           }
-        } catch (fileErr) {
-          toast.error(
-            fileErr instanceof Error
-              ? fileErr.message
-              : `Connection error while uploading "${fileItem.name}"`
+        } else {
+          // --- STANDARD SINGLE-REQUEST UPLOAD (for small images <= 768KB) ---
+          setUploadProgressText(
+            `Uploading ${isVid ? "video" : "image"} ${i + 1} of ${filesToUpload.length} (${fileItem.name})...`
           );
+
+          const formData = new FormData();
+          formData.append("file", fileItem);
+
+          try {
+            const res = await fetch("/api/admin/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (res.status === 413) {
+              toast.error(
+                `"${fileItem.name}" exceeds server upload limits (413).`
+              );
+              continue;
+            }
+
+            let data: any = null;
+            try {
+              data = await res.json();
+            } catch {
+              toast.error(`Server error uploading "${fileItem.name}".`);
+              continue;
+            }
+
+            if (res.ok && data?.success && Array.isArray(data.files) && data.files.length > 0) {
+              const uploadedUrl = data.files[0].url;
+              updatedMediaList.push(uploadedUrl);
+              uploadSuccessCount++;
+              onChange([...updatedMediaList]);
+            } else {
+              toast.error(data?.error || `Failed to upload "${fileItem.name}"`);
+            }
+          } catch (fileErr) {
+            toast.error(
+              fileErr instanceof Error
+                ? fileErr.message
+                : `Connection error while uploading "${fileItem.name}"`
+            );
+          }
         }
       }
 
