@@ -259,7 +259,7 @@ export async function compileAiKnowledge(): Promise<{
   const websiteFlowSection = `=== VORTIX TECH WEBSITE FLOW & USER JOURNEY ===
 1. Home Page (/):
    - Overview of our agency, core value proposition, key metrics, and technology expertise.
-   - Highlights of web development, mobile apps, n8n automations, ComfyUI, and LLM solutions.
+   - Highlights of Web Application Development, Mobile App Development, n8n Automation, ComfyUI, and LLM Solutions.
    - Includes real client testimonials and direct conversion button to "Start Project".
 
 2. Services Page (/services):

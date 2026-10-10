@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Image as ImageIcon, Save, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Save, RefreshCw, Wand2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { BlogCoverImageUploader } from "@/components/admin/BlogCoverImageUploader";
 
 type Article = {
   id: string;
@@ -37,6 +38,10 @@ export default function EditBlogPage() {
     isPublished: true,
   });
 
+  const [includeCode, setIncludeCode] = useState(true);
+  const [includeTables, setIncludeTables] = useState(true);
+  const [isRewriting, setIsRewriting] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     let active = true;
@@ -60,15 +65,40 @@ export default function EditBlogPage() {
     };
   }, [id]);
 
-  const regenerateImage = () => {
-    if (!article.title) return toast.error("Add a title first.");
-    const prompt = encodeURIComponent(
-      `${article.title} modern technology abstract high quality 4k digital art`
-    );
-    setArticle((prev) => ({
-      ...prev,
-      image: `https://image.pollinations.ai/prompt/${prompt}?width=1200&height=630&nologo=true`,
-    }));
+  const rewriteArticle = async () => {
+    if (!article.title) return toast.error("Please add a title first.");
+    setIsRewriting(true);
+    try {
+      const res = await fetch("/api/admin/ai/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: article.title,
+          category: article.category,
+          includeCode,
+          includeTables,
+          tone: "technical",
+          depth: "deep",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to rewrite article");
+      }
+
+      setArticle((prev) => ({
+        ...prev,
+        content: data.article.content,
+        excerpt: data.article.excerpt || prev.excerpt,
+        readTime: data.article.readTime || prev.readTime,
+      }));
+      toast.success("Article body rewritten via AI!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to rewrite article");
+    } finally {
+      setIsRewriting(false);
+    }
   };
 
   const saveArticle = async () => {
@@ -208,40 +238,61 @@ export default function EditBlogPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">Cover Image URL</label>
-              <button
-                type="button"
-                onClick={regenerateImage}
-                className="text-xs font-medium text-green-700 hover:underline flex items-center gap-1"
-              >
-                <RefreshCw size={12} /> Regenerate
-              </button>
-            </div>
-            <input
-              type="url"
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image</label>
+            <BlogCoverImageUploader
               value={article.image}
-              onChange={(e) => setArticle({ ...article, image: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://..."
+              onChange={(url) => setArticle((prev) => ({ ...prev, image: url }))}
+              articleTitle={article.title}
+              articleContent={article.content}
+              articleCategory={article.category}
+              articleExcerpt={article.excerpt}
             />
-            {article.image ? (
-              <img
-                src={article.image}
-                alt="Cover preview"
-                className="mt-3 w-full h-48 object-cover rounded-lg border border-gray-200"
-              />
-            ) : (
-              <div className="mt-3 w-full h-32 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-400">
-                <ImageIcon size={24} />
-              </div>
-            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Markdown Content
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Markdown Content
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIncludeCode(!includeCode)}
+                  className={`text-[11px] font-semibold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                    includeCode
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                      : "bg-gray-100 border-gray-200 text-gray-400 line-through hover:bg-gray-200"
+                  }`}
+                  title="Toggle Code Snippets"
+                >
+                  Code: {includeCode ? "Included" : "Excluded"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIncludeTables(!includeTables)}
+                  className={`text-[11px] font-semibold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                    includeTables
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                      : "bg-gray-100 border-gray-200 text-gray-400 line-through hover:bg-gray-200"
+                  }`}
+                  title="Toggle Comparison Tables"
+                >
+                  Tables: {includeTables ? "Included" : "Excluded"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={rewriteArticle}
+                  disabled={isRewriting || !article.title}
+                  className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1.5 py-1 px-3 rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {isRewriting ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+                  AI Rewrite Body
+                </button>
+              </div>
+            </div>
             <textarea
               value={article.content}
               onChange={(e) => setArticle({ ...article, content: e.target.value })}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock, User, Tag } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
+import { ArticleContent } from "@/components/blog/ArticleContent";
 import { Metadata } from "next";
 import Image from "next/image";
 
@@ -148,9 +148,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             />
           </div>
 
-          <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-8 pb-20">
-            <ReactMarkdown>{article.content}</ReactMarkdown>
-          </div>
+          <ArticleContent content={article.content} />
         </div>
       </section>
     </div>

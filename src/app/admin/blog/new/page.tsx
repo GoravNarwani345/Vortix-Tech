@@ -20,12 +20,14 @@ import {
   Globe,
   FileText,
   Palette,
+  Sliders,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import type { SEOTopicItem } from "@/app/api/admin/ai/topics/route";
 import type { ResearchResult } from "@/app/api/admin/ai/research/route";
+import { BlogCoverImageUploader } from "@/components/admin/BlogCoverImageUploader";
 
 export default function NewBlogPage() {
   const router = useRouter();
@@ -61,6 +63,14 @@ export default function NewBlogPage() {
 
   // Custom visual style for image generation
   const [imageStyle, setImageStyle] = useState<"clean" | "isometric" | "dark">("clean");
+  const [articleImagePrompt, setArticleImagePrompt] = useState("");
+
+  // Advanced AI Generation Settings
+  const [tone, setTone] = useState<"technical" | "tutorial" | "executive" | "case-study">("technical");
+  const [depth, setDepth] = useState<"deep" | "standard" | "concise">("deep");
+  const [includeCode, setIncludeCode] = useState(true);
+  const [includeTables, setIncludeTables] = useState(true);
+  const [includeArchitectureFlow, setIncludeArchitectureFlow] = useState(true);
 
   // 1. Fetch Daily SEO Topic Ideas
   const generateTopics = async () => {
@@ -155,6 +165,11 @@ export default function NewBlogPage() {
           targetKeywords: targetKeywords.length > 0 ? targetKeywords : undefined,
           researchBrief: researchData ? researchData : undefined,
           category: article.category,
+          tone,
+          depth,
+          includeCode,
+          includeTables,
+          includeArchitectureFlow,
         }),
       });
 
@@ -174,6 +189,10 @@ export default function NewBlogPage() {
 
       if (generated.keywords && generated.keywords.length > 0) {
         setTargetKeywords(generated.keywords);
+      }
+
+      if (generated.imagePrompt) {
+        setArticleImagePrompt(generated.imagePrompt);
       }
 
       // Auto generate free cover image if none exists
@@ -588,6 +607,84 @@ export default function NewBlogPage() {
             </div>
           )}
 
+          {/* AI CONTENT GENERATION SETTINGS */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <Sliders size={18} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm">AI Content Refinement Settings</h3>
+                <p className="text-[11px] text-gray-500">Tune the voice, depth, and structural elements</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                  Tone & Perspective
+                </label>
+                <select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 text-xs font-medium text-gray-800 outline-none transition-all"
+                >
+                  <option value="technical">Technical Deep Dive (Architect)</option>
+                  <option value="tutorial">Hands-on Tutorial & Code</option>
+                  <option value="executive">Executive Strategy & ROI</option>
+                  <option value="case-study">Engineering Postmortem & Case Study</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                  Target Length & Depth
+                </label>
+                <select
+                  value={depth}
+                  onChange={(e) => setDepth(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 text-xs font-medium text-gray-800 outline-none transition-all"
+                >
+                  <option value="deep">Comprehensive Deep Dive (1,500+ words)</option>
+                  <option value="standard">Standard Guide (1,000 words)</option>
+                  <option value="concise">Compact Briefing (600 words)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-4 text-xs font-medium text-gray-700">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeTables}
+                  onChange={(e) => setIncludeTables(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Comparison Tables</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeCode}
+                  onChange={(e) => setIncludeCode(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Production Code Snippets</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeArchitectureFlow}
+                  onChange={(e) => setIncludeArchitectureFlow(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Architecture Flows & Checklists</span>
+              </label>
+            </div>
+          </div>
+
           {/* FREE AI IMAGE TOOLS & PROMPT GENERATOR */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
@@ -741,7 +838,7 @@ export default function NewBlogPage() {
         {/* Right Column (7 cols): Article Editor (Always Fully Editable) */}
         <div className="lg:col-span-7">
           <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
               <div>
                 <h2 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                   <FileText size={18} className="text-indigo-600" />
@@ -752,15 +849,45 @@ export default function NewBlogPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => writeArticle()}
-                disabled={isWriting || !article.title}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-50"
-              >
-                {isWriting ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
-                Regenerate Body
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Quick Toggle for Code Snippets */}
+                <button
+                  type="button"
+                  onClick={() => setIncludeCode(!includeCode)}
+                  className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    includeCode
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                      : "bg-gray-100 border-gray-200 text-gray-400 line-through hover:bg-gray-200"
+                  }`}
+                  title="Click to toggle Code Snippets on or off"
+                >
+                  Code: {includeCode ? "Included" : "Excluded"}
+                </button>
+
+                {/* Quick Toggle for Comparison Tables */}
+                <button
+                  type="button"
+                  onClick={() => setIncludeTables(!includeTables)}
+                  className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                    includeTables
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                      : "bg-gray-100 border-gray-200 text-gray-400 line-through hover:bg-gray-200"
+                  }`}
+                  title="Click to toggle Comparison Tables on or off"
+                >
+                  Tables: {includeTables ? "Included" : "Excluded"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => writeArticle()}
+                  disabled={isWriting || !article.title}
+                  className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-colors disabled:opacity-50 shadow-xs cursor-pointer"
+                >
+                  {isWriting ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+                  Regenerate Body
+                </button>
+              </div>
             </div>
 
             {/* Title */}
@@ -854,40 +981,20 @@ export default function NewBlogPage() {
               )}
             </div>
 
-            {/* Cover Image URL / Preview */}
+            {/* Cover Image Uploader & Generator */}
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                Cover Image URL
+                Cover Image
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={article.image}
-                  onChange={(e) => setArticle({ ...article, image: e.target.value })}
-                  placeholder="Paste image URL or use 'Instant Free Image' on the left..."
-                  className="flex-1 px-4 py-2 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-gray-800 font-mono transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => generateImage()}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors"
-                >
-                  Refresh
-                </button>
-              </div>
-
-              {article.image && (
-                <div className="mt-3 relative aspect-[1200/630] rounded-xl overflow-hidden border border-gray-200 group">
-                  <img
-                    src={article.image}
-                    alt="Article Cover Preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-xs text-white text-[11px] font-medium">
-                    Cover Preview (1200 x 630)
-                  </div>
-                </div>
-              )}
+              <BlogCoverImageUploader
+                value={article.image}
+                onChange={(url) => setArticle((prev) => ({ ...prev, image: url }))}
+                articleTitle={article.title}
+                articleContent={article.content}
+                articleCategory={article.category}
+                articleExcerpt={article.excerpt}
+                initialPrompt={articleImagePrompt}
+              />
             </div>
 
             {/* Markdown Content (Fully Editable) */}
