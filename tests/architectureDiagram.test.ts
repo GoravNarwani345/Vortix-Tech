@@ -54,4 +54,16 @@ function calculateTax(price: number, rate: number): number {
     // Stage 3
     expect(stages[2].title).toContain("RETRIEVAL LAYER");
   });
+
+  it("should cleanly split multi-dash arrows without leaving hyphens", () => {
+    const multiDashDiagram = `
+┌────────────────────────────────────────────────────────┐
+│ STREAMING PIPELINE                                     │
+│ Ingest Event --> Kafka Broker --> Consumer Service     │
+└────────────────────────────────────────────────────────┘
+`;
+    const stages = parseAsciiStages(multiDashDiagram);
+    expect(stages.length).toBe(1);
+    expect(stages[0].flowSteps).toEqual(["Ingest Event", "Kafka Broker", "Consumer Service"]);
+  });
 });

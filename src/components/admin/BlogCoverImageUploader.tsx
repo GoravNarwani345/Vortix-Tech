@@ -46,12 +46,18 @@ export function BlogCoverImageUploader({
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync initialPrompt if passed from parent
+  // Sync initialPrompt and value if passed from parent
   useEffect(() => {
     if (initialPrompt && !promptText) {
       setPromptText(initialPrompt);
     }
   }, [initialPrompt]);
+
+  useEffect(() => {
+    if (value) {
+      setUrlInput(value);
+    }
+  }, [value]);
 
   // 1. Direct Computer File Upload (Chunked streaming for large files)
   const handleFileUpload = async (files: FileList | null) => {

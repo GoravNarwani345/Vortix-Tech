@@ -27,7 +27,7 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
         mermaid.initialize({
           startOnLoad: false,
           theme: "dark",
-          securityLevel: "loose",
+          securityLevel: "strict",
           fontFamily: "inherit",
           themeVariables: {
             darkMode: true,
@@ -63,11 +63,16 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
     };
   }, [code, diagramId]);
 
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code.trim());
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback
     }

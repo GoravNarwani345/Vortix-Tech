@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -152,7 +152,7 @@ export function parseAsciiStages(text: string): ArchitectureStage[] {
       currentTitle = cleanLine.replace(/[┌┐└┘│─┼├┤┴┬]/g, "").trim();
     } else if (cleanLine.includes("->") || cleanLine.includes("-->") || cleanLine.includes("➔") || cleanLine.includes("├─>") || cleanLine.includes("─>")) {
       const parts = cleanLine
-        .split(/->|-->|➔|├─>|─>/)
+        .split(/-->|->|├─>|─>|➔/)
         .map((p) => p.replace(/[┌┐└┘│─┼├┤┴┬]/g, "").trim())
         .filter(Boolean);
       currentSteps.push(...parts);
@@ -224,11 +224,16 @@ function ArchitectureDiagramCard({
   const [viewMode, setViewMode] = useState<"visual" | "raw">("visual");
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(rawText.trim());
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback
     }
@@ -385,13 +390,27 @@ function ArchitectureDiagramCard({
   );
 }
 
+function extractTextFromNode(node: React.ReactNode): string {
+  if (node === null || node === undefined) return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractTextFromNode).join("");
+  if (React.isValidElement(node) && node.props && (node.props as { children?: React.ReactNode }).children) {
+    return extractTextFromNode((node.props as { children?: React.ReactNode }).children);
+  }
+  return "";
+}
+
 function CodeBlock({ children, className }: { children: React.ReactNode; className?: string }) {
   const [copied, setCopied] = useState(false);
 
-  // Extract raw text from children
-  const rawText = React.Children.toArray(children)
-    .map((child) => (typeof child === "string" ? child : ""))
-    .join("");
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  // Extract raw text recursively from children
+  const rawText = extractTextFromNode(children);
 
   const language = className ? className.replace("language-", "") : "plaintext";
 
@@ -412,7 +431,6 @@ function CodeBlock({ children, className }: { children: React.ReactNode; classNa
     try {
       await navigator.clipboard.writeText(rawText.trim());
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback
     }
@@ -479,8 +497,9 @@ export function ArticleContent({ content }: ArticleContentProps) {
             <td className="px-5 py-3.5 text-sm text-gray-700 align-top leading-normal" {...props} />
           ),
           pre: ({ children, ...props }) => {
-            // Find code element inside pre
-            const codeEl = React.isValidElement(children) ? children : null;
+            // Find code element inside pre, supporting arrays or nested elements
+            const childArray = React.Children.toArray(children);
+            const codeEl = childArray.find(React.isValidElement) as React.ReactElement | undefined;
             if (codeEl) {
               const codeProps = codeEl.props as { className?: string; children?: React.ReactNode };
               return (

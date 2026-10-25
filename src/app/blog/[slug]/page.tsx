@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Clock, User, Tag } from "lucide-react";
+import { ArrowLeft, Clock, Tag } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ArticleContent } from "@/components/blog/ArticleContent";
@@ -9,7 +9,6 @@ import { ArticleTakeaways } from "@/components/blog/ArticleTakeaways";
 import { ArticleStickyCTA } from "@/components/blog/ArticleStickyCTA";
 import { BlogCardImage } from "@/components/blog/BlogCardImage";
 import { Metadata } from "next";
-import Image from "next/image";
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -135,7 +134,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm shadow-xs">
-              {article.author.split(' ').map(w => w[0]).join('')}
+              {article.author
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase() || "VT"}
             </div>
             <div>
               <p className="font-bold text-gray-900 text-sm">{article.author}</p>

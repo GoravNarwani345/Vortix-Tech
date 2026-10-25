@@ -12,6 +12,9 @@ export const maxDuration = 60;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 25 * 1024 * 1024;
 
+const ALLOWED_IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]);
+const ALLOWED_VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".ogg"]);
+
 export async function POST(req: Request) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -66,10 +69,15 @@ export async function POST(req: Request) {
       const partFilePath = path.join(chunksDir, `${uploadId}.part`);
       const chunkBytes = await chunkFile.arrayBuffer();
 
-      if (chunkIndex === 0) {
-        await fs.writeFile(partFilePath, Buffer.from(chunkBytes));
-      } else {
-        await fs.appendFile(partFilePath, Buffer.from(chunkBytes));
+      try {
+        if (chunkIndex === 0) {
+          await fs.writeFile(partFilePath, Buffer.from(chunkBytes));
+        } else {
+          await fs.appendFile(partFilePath, Buffer.from(chunkBytes));
+        }
+      } catch (err) {
+        await fs.unlink(partFilePath).catch(() => {});
+        throw err;
       }
 
       // On final chunk, validate bounds and atomically promote to permanent uploads
@@ -78,7 +86,16 @@ export async function POST(req: Request) {
           isVideoMedia(originalFileName) || chunkFile.type.startsWith("video/");
         const isImg = !isVid;
 
-        const stat = await fs.stat(partFilePath);
+        let stat;
+        try {
+          stat = await fs.stat(partFilePath);
+        } catch {
+          return NextResponse.json(
+            { error: "Uploaded chunks assembly failed or chunks are missing." },
+            { status: 400 }
+          );
+        }
+
         if (isVid && stat.size > MAX_VIDEO_SIZE) {
           await fs.unlink(partFilePath).catch(() => {});
           return NextResponse.json(
@@ -94,18 +111,33 @@ export async function POST(req: Request) {
           );
         }
 
-        let targetExt = path.extname(originalFileName).toLowerCase();
+        const rawExt = path.extname(originalFileName).toLowerCase();
+        let targetExt = rawExt;
+
         if (isVid) {
-          if (targetExt === ".webm") targetExt = ".webm";
-          else if (targetExt === ".mov") targetExt = ".mov";
-          else if (targetExt === ".ogg") targetExt = ".ogg";
-          else targetExt = targetExt || ".mp4";
+          if (!ALLOWED_VIDEO_EXTS.has(rawExt)) {
+            if (chunkFile.type.startsWith("video/")) {
+              targetExt = ".mp4";
+            } else {
+              await fs.unlink(partFilePath).catch(() => {});
+              return NextResponse.json(
+                { error: `Unsupported video format "${rawExt}". Permitted: .mp4, .webm, .mov, .ogg` },
+                { status: 400 }
+              );
+            }
+          }
         } else {
-          if (targetExt === ".webp") targetExt = ".webp";
-          else if (targetExt === ".svg") targetExt = ".svg";
-          else if (targetExt === ".png") targetExt = ".png";
-          else if (targetExt === ".gif") targetExt = ".gif";
-          else targetExt = targetExt || ".jpg";
+          if (!ALLOWED_IMAGE_EXTS.has(rawExt)) {
+            if (chunkFile.type.startsWith("image/")) {
+              targetExt = ".webp";
+            } else {
+              await fs.unlink(partFilePath).catch(() => {});
+              return NextResponse.json(
+                { error: `Unsupported image format "${rawExt}". Permitted: .webp, .png, .jpg, .jpeg, .gif, .svg` },
+                { status: 400 }
+              );
+            }
+          }
         }
 
         const safeBaseName = path
@@ -199,31 +231,33 @@ export async function POST(req: Request) {
         );
       }
 
-      // Preserve accurate extension matching MIME type
-      let targetExt = path.extname(file.name).toLowerCase();
+      // Preserve accurate extension matching MIME type and enforce strict allowlist
+      const rawExt = path.extname(file.name).toLowerCase();
+      let targetExt = rawExt;
+
       if (isImage) {
-        if (file.type === "image/svg+xml" || targetExt === ".svg") {
-          targetExt = ".svg";
-        } else if (file.type === "image/webp" || targetExt === ".webp") {
-          targetExt = ".webp";
-        } else if (file.type === "image/png" || targetExt === ".png") {
-          targetExt = ".png";
-        } else if (file.type === "image/gif" || targetExt === ".gif") {
-          targetExt = ".gif";
-        } else if (file.type === "image/jpeg" || targetExt === ".jpg" || targetExt === ".jpeg") {
+        if (!ALLOWED_IMAGE_EXTS.has(rawExt)) {
+          if (file.type.startsWith("image/")) {
+            targetExt = ".webp";
+          } else {
+            return NextResponse.json(
+              { error: `Unsupported image extension "${rawExt}". Permitted: .webp, .png, .jpg, .jpeg, .gif, .svg` },
+              { status: 400 }
+            );
+          }
+        } else if (file.type === "image/jpeg" || rawExt === ".jpeg") {
           targetExt = ".jpg";
-        } else {
-          targetExt = targetExt || ".webp";
         }
       } else if (isVideo) {
-        if (file.type === "video/webm" || targetExt === ".webm") {
-          targetExt = ".webm";
-        } else if (file.type === "video/ogg" || targetExt === ".ogg") {
-          targetExt = ".ogg";
-        } else if (file.type === "video/quicktime" || targetExt === ".mov") {
-          targetExt = ".mov";
-        } else {
-          targetExt = targetExt || ".mp4";
+        if (!ALLOWED_VIDEO_EXTS.has(rawExt)) {
+          if (file.type.startsWith("video/")) {
+            targetExt = ".mp4";
+          } else {
+            return NextResponse.json(
+              { error: `Unsupported video extension "${rawExt}". Permitted: .mp4, .webm, .mov, .ogg` },
+              { status: 400 }
+            );
+          }
         }
       }
 

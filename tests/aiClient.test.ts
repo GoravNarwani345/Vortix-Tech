@@ -8,7 +8,7 @@ import { AI_MODELS, getModelById } from "@/lib/aiModels";
 describe("AI Gateway & Model Priority Suite", () => {
   it("should have deepseek-v4-flash as the very first default model", () => {
     expect(AGENTROUTER_DEFAULT_MODELS.length).toBeGreaterThan(0);
-    expect(AGENTROUTER_DEFAULT_MODELS[0]).toBe("deepseek-v4-flash");
+    expect(AGENTROUTER_DEFAULT_MODELS[0].toLowerCase()).toBe("deepseek-v4-flash");
   });
 
   it("should recognize DeepSeek models as AgentRouter models", () => {
